@@ -25,6 +25,10 @@
   <spacebase name="a8_" register="a8" space="ram"/>
   <spacebase name="a9_" register="a9" space="ram"/>
   <global>
+    <range space="a0_"/>
+    <range space="a1_"/>
+    <range space="a8_"/>
+    <range space="a9_"/>
     <range space="ram"/>
   </global>
   
