@@ -17,6 +17,7 @@ import ghidra.program.model.listing.FunctionIterator;
 import ghidra.program.model.listing.Instruction;
 import ghidra.program.model.scalar.Scalar;
 import ghidra.program.model.symbol.RefType;
+import ghidra.program.model.symbol.SourceType;
 import ghidra.program.util.SymbolicPropogator;
 import ghidra.program.util.VarnodeContext;
 import ghidra.util.exception.CancelledException;
@@ -57,7 +58,7 @@ public class TricoreLoadConstants extends GhidraScript {
                     return false;
                 }
 
-                if (srcReg.getName().equals("a9") && context.getValue(srcReg, false) == null) {
+                if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) == null) {
                     String valForRegister;
                     try {
                         valForRegister = askString("Set value for " + srcReg.getName(), "Value for " + srcReg.getName() + ":");
@@ -73,6 +74,9 @@ public class TricoreLoadConstants extends GhidraScript {
                     Long newDstValue = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
                     context.setValue(dstReg, BigInteger.valueOf(newDstValue));
                     System.out.println("Reg " + dstReg.getName() + " set value to: " + context.getValue(srcReg, false));
+
+                    Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
+                    instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
                 }
             }
 
@@ -82,6 +86,17 @@ public class TricoreLoadConstants extends GhidraScript {
         @Override
         public boolean evaluateReference(VarnodeContext context, Instruction instr, int pcodeop, Address address, int size, RefType refType) {
             return true; // just go ahead and mark up the instruction
+        }
+
+        private boolean askRegisterValue(String name) {
+            switch (name) {
+            case "a0":
+            case "a1":
+            case "a9":
+                return true;
+            default:
+                return false;
+            }
         }
     }
 
