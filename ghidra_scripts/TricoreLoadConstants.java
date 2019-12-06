@@ -5,7 +5,14 @@
 //@menupath
 //@toolbar
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.LineNumberReader;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.plugin.core.analysis.ConstantPropagationAnalyzer;
@@ -38,25 +45,34 @@ public class TricoreLoadConstants extends GhidraScript {
     private class TricoreConstantPropagationEvaluator extends ConstantPropagationContextEvaluator {
 
         ConstantPropagationAnalyzer constantPropagationAnalyzer;
+        File a2l;
 
         public TricoreConstantPropagationEvaluator() {
             super(true);
             constantPropagationAnalyzer = new ConstantPropagationAnalyzer(currentProgram.getLanguage().getProcessor().toString());
+
+            try {
+                a2l = askFile("Provide optional a2l file", "OK");
+            } catch (CancelledException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
         public boolean evaluateContext(VarnodeContext context, Instruction instr) {
+            Register dstReg = null;
+            Register srcReg = null;
+            Scalar scalar = null;
 
-            if (instr.getNumOperands() == 2) {
-                Register dstReg = instr.getRegister(0);
-                Register srcReg = null;
-                Scalar scalar = null;
+            // check if any load instr
+            if (instr.getNumOperands() == 2 && instr.getRegister(0) != null) {
+                dstReg = instr.getRegister(0);
 
-                Object[] srcRegAndScalar = instr.getOpObjects(1);
-
-                if (dstReg == null) {
+                if (dstReg.getName().startsWith("a") == false) {
                     return false;
                 }
+
+                Object[] srcRegAndScalar = instr.getOpObjects(1);
 
                 if (srcRegAndScalar.length == 2) {
                     if (srcRegAndScalar[0] instanceof Register) {
@@ -72,43 +88,61 @@ public class TricoreLoadConstants extends GhidraScript {
                     return false;
                 }
 
-                if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) == null) {
-                    String valForRegister;
-                    try {
-                        valForRegister = askString("Set value for " + srcReg.getName(), "Value for " + srcReg.getName() + ":");
-                        BigInteger val = new BigInteger(valForRegister, 16);
-                        context.setValue(srcReg, val);
-                        System.out.println("Reg " + srcReg.getName() + " set value to: " + context.getValue(srcReg, false));
-                    } catch (CancelledException e) {
-                        e.printStackTrace();
-                    }
+            } else {
+                return false;
+            }
 
+            if (instr.getAddress().toString().equals("8012c22c")) {
+                System.out.println("Found 8012c22c val " + context.getValue(dstReg, false));
+            }
+
+            // check for special register
+            if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) == null) { // val is not set yet
+                String valForRegister;
+                try {
+                    valForRegister = askString("Set value for " + srcReg.getName(), "Value for " + srcReg.getName() + ":"); // ask the val
+                    BigInteger val = new BigInteger(valForRegister, 16);
+                    context.setValue(srcReg, val);
+                    System.out.println("Reg " + srcReg.getName() + " set value to: " + context.getValue(srcReg, false));
+                } catch (CancelledException e) {
+                    e.printStackTrace();
                 }
+            } else if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) != null) {
+                Long srcVal = Long.valueOf(context.getValue(srcReg, false).longValue());
+                Address refAddr = instr.getMinAddress().getNewAddress(srcVal);
+                instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
+                markAsConst(refAddr, Undefined4DataType.dataType); // propagate the src address, e.g. a9 = 8016D340
+            }
+
+            if (context.getValue(srcReg, false) != null) {
+                Long srcVal = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
+                Address refAddr = instr.getMinAddress().getNewAddress(srcVal);
+                instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
 
                 if (isStaticRegisterValue(srcReg.getName())) {
-                    Long srcVal = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
-                    Address refAddr = instr.getMinAddress().getNewAddress(srcVal);
-                    markAsConst(refAddr, Undefined4DataType.dataType);
+                    markAsConst(refAddr, Undefined4DataType.dataType); // propagate the src address, e.g. a9 = 8016D340[0xabc]
                 }
+            }
 
-                if (context.getValue(dstReg, false) == null && context.getValue(srcReg, false) != null) {
-                    Long newDstValue = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
-                    context.setValue(dstReg, BigInteger.valueOf(newDstValue));
-                    System.out.println("Reg " + dstReg.getName() + " set value to: " + context.getValue(srcReg, false));
+            if (context.getValue(dstReg, false) == null && context.getValue(srcReg, false) != null) { // propagate dst, e.g. aX = aY[0xabc]
+                Long newDstValue = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
+                context.setValue(dstReg, BigInteger.valueOf(newDstValue));
+                System.out.println("Reg " + dstReg.getName() + " set value to: " + context.getValue(srcReg, false));
 
-                    Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
+                Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
+                instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
+
+                markAsConst(refAddr, getDataType(instr));
+            }
+
+            if (isAddressRegister(dstReg) && context.getValue(dstReg, false) != null) {
+                Long newDstValue = context.getValue(dstReg, false).longValue();
+                Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
+
+                if (refAddr != null && refAddr.toString().startsWith("8")) {
+                    System.out.println("Marking const for " + dstReg.getName() + " " + refAddr.toString());
                     instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
-
                     markAsConst(refAddr, getDataType(instr));
-
-                } else if (isAddressRegister(dstReg) && context.getValue(dstReg, false) != null) {
-                    Long newDstValue = context.getValue(dstReg, false).longValue();
-                    Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
-
-                    if (refAddr != null && refAddr.toString().startsWith("8")) {
-                        System.out.println("Marking const for " + dstReg.getName() + " " + refAddr.toString());
-                        markAsConst(refAddr, getDataType(instr));
-                    }
                 }
             }
 
@@ -149,8 +183,10 @@ public class TricoreLoadConstants extends GhidraScript {
             Data data = null;
             try {
                 data = currentProgram.getListing().createData(refAddr, dataType);
+
             } catch (CodeUnitInsertionException e) {
-                data = currentProgram.getListing().getDefinedDataAt(refAddr);
+                data = currentProgram.getListing().getDefinedDataContaining(refAddr);
+
             } catch (DataTypeConflictException e) {
                 e.printStackTrace();
                 // ignore data type conflict
@@ -159,11 +195,47 @@ public class TricoreLoadConstants extends GhidraScript {
             if (data != null && data.getDataType().getSettingsDefinitions() != null) {
                 constantPropagationAnalyzer.markDataAsConstant(data);
             }
+
+            labelAddress(refAddr);
+        }
+
+        private void labelAddress(Address refAddr) {
+
+            try {
+                if (a2l == null) {
+                    createLabel(refAddr, "const_" + refAddr, true);
+
+                } else {
+                    // find line number of 0xADDRESS
+                    LineNumberReader reader = new LineNumberReader(new FileReader(a2l));
+                    String line = reader.readLine();
+                    long lineNumberOfLabel = 0;
+                    while (line != null) {
+                        if (line.trim().equals("0x" + (refAddr.toString().toUpperCase()))) { // found addr
+                            lineNumberOfLabel = reader.getLineNumber() - 4; // a2l name is 4 lines above
+                            break;
+                        }
+
+                        line = reader.readLine();
+                    }
+                    reader.close();
+
+                    if (lineNumberOfLabel != 0) { // found the a2l name
+                        try (Stream<String> lines = Files.lines(Paths.get(a2l.getPath()), StandardCharsets.ISO_8859_1)) { // utf8 will crash
+                            String a2lLabel = lines.skip(lineNumberOfLabel).findFirst().get().trim(); // read line
+                            System.out.println("Loaded a2l label '" + a2lLabel + "' on line " + lineNumberOfLabel);
+                            createLabel(refAddr, a2lLabel, true); // set the name
+                        }
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
 
         private DataType getDataType(Instruction instr) {
-            System.out.println(instr);
-
             if (instr.getMnemonicString().equals("lea")) {
                 return Undefined4DataType.dataType;
 
