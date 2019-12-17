@@ -1,6 +1,6 @@
-//TODO write a description for this script
-//@author
-//@category _NEW_
+//Propagates TriCore register values.
+//@author Alexander Kostenev
+//@category Memory Propagtion
 //@keybinding
 //@menupath
 //@toolbar
@@ -12,9 +12,10 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Stream;
 
-import ghidra.app.decompiler.DecompInterface;
 import ghidra.app.plugin.core.analysis.ConstantPropagationAnalyzer;
 import ghidra.app.plugin.core.analysis.ConstantPropagationContextEvaluator;
 import ghidra.app.script.GhidraScript;
@@ -42,17 +43,21 @@ import ghidra.util.exception.CancelledException;
 
 public class TricoreLoadConstants extends GhidraScript {
 
+    /**
+     * Propagates TriCore register values.
+     */
     private class TricoreConstantPropagationEvaluator extends ConstantPropagationContextEvaluator {
 
-        ConstantPropagationAnalyzer constantPropagationAnalyzer;
-        File a2l;
+        ConstantPropagationAnalyzer constantPropagationAnalyzer; // helper to mark memory addresses as const
+        File a2l; // optional a2l file for labels
+        Set<Address> sAlreadyLoadedA2lAddresses = new TreeSet<>(); // cash to improve performance on a2l load
 
         public TricoreConstantPropagationEvaluator() {
             super(true);
             constantPropagationAnalyzer = new ConstantPropagationAnalyzer(currentProgram.getLanguage().getProcessor().toString());
 
             try {
-                a2l = askFile("Provide optional a2l file", "OK");
+                a2l = askFile("Provide optional a2l file", "OK"); // load an a2l file
             } catch (CancelledException e) {
                 e.printStackTrace();
             }
@@ -64,13 +69,9 @@ public class TricoreLoadConstants extends GhidraScript {
             Register srcReg = null;
             Scalar scalar = null;
 
-            // check if any load instr
+            // check if any load instr dst = src[scalar]
             if (instr.getNumOperands() == 2 && instr.getRegister(0) != null) {
                 dstReg = instr.getRegister(0);
-
-                if (dstReg.getName().startsWith("a") == false) {
-                    return false;
-                }
 
                 Object[] srcRegAndScalar = instr.getOpObjects(1);
 
@@ -92,11 +93,7 @@ public class TricoreLoadConstants extends GhidraScript {
                 return false;
             }
 
-            if (instr.getAddress().toString().equals("8012c22c")) {
-                System.out.println("Found 8012c22c val " + context.getValue(dstReg, false));
-            }
-
-            // check for special register
+            // check for special register, a0, a1, a9, if their value is not set yet
             if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) == null) { // val is not set yet
                 String valForRegister;
                 try {
@@ -107,23 +104,25 @@ public class TricoreLoadConstants extends GhidraScript {
                 } catch (CancelledException e) {
                     e.printStackTrace();
                 }
-            } else if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) != null) {
+            }
+
+            // propagte the register address values
+            if (askRegisterValue(srcReg.getName()) && context.getValue(srcReg, false) != null) {
                 Long srcVal = Long.valueOf(context.getValue(srcReg, false).longValue());
                 Address refAddr = instr.getMinAddress().getNewAddress(srcVal);
                 instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
                 markAsConst(refAddr, Undefined4DataType.dataType); // propagate the src address, e.g. a9 = 8016D340
             }
 
+            // propagate the src address + scalar
             if (context.getValue(srcReg, false) != null) {
                 Long srcVal = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
                 Address refAddr = instr.getMinAddress().getNewAddress(srcVal);
                 instr.addOperandReference(0, refAddr, RefType.DATA, SourceType.ANALYSIS);
-
-                if (isStaticRegisterValue(srcReg.getName())) {
-                    markAsConst(refAddr, Undefined4DataType.dataType); // propagate the src address, e.g. a9 = 8016D340[0xabc]
-                }
+                markAsConst(refAddr, Undefined4DataType.dataType); // propagate the src address, e.g. a9 = 8016D340[0xabc]
             }
 
+            // set the dst registers
             if (context.getValue(dstReg, false) == null && context.getValue(srcReg, false) != null) { // propagate dst, e.g. aX = aY[0xabc]
                 Long newDstValue = Long.valueOf(context.getValue(srcReg, false).longValue() + scalar.getValue());
                 context.setValue(dstReg, BigInteger.valueOf(newDstValue));
@@ -135,6 +134,7 @@ public class TricoreLoadConstants extends GhidraScript {
                 markAsConst(refAddr, getDataType(instr));
             }
 
+            // if lea, propagate also, e.g. lea a2 = a9[0xabc]
             if (isAddressRegister(dstReg) && context.getValue(dstReg, false) != null) {
                 Long newDstValue = context.getValue(dstReg, false).longValue();
                 Address refAddr = instr.getMinAddress().getNewAddress(newDstValue);
@@ -154,6 +154,12 @@ public class TricoreLoadConstants extends GhidraScript {
             return true; // just go ahead and mark up the instruction
         }
 
+        /**
+         * Checks whether the register should load a value.
+         *
+         * @param name
+         * @return
+         */
         private boolean askRegisterValue(String name) {
             switch (name) {
             case "a0":
@@ -165,45 +171,60 @@ public class TricoreLoadConstants extends GhidraScript {
             }
         }
 
-        private boolean isStaticRegisterValue(String name) {
-            switch (name) {
-            case "a1":
-            case "a9":
-                return true;
-            default:
-                return false;
-            }
-        }
-
+        /**
+         * Returns true if the register name start with "a"
+         *
+         * @param reg
+         * @return
+         */
         private boolean isAddressRegister(Register reg) {
             return reg.toString().startsWith("a");
         }
 
+        /**
+         * Marks the addr as const and labels it
+         *
+         * @param refAddr
+         * @param dataType
+         */
         private void markAsConst(Address refAddr, DataType dataType) {
+            if (refAddr.toString().startsWith("8") == false) {
+                return; // mark only if the address points to the flash
+            }
+
             Data data = null;
             try {
+                // try to create a new data on the addr
                 data = currentProgram.getListing().createData(refAddr, dataType);
 
             } catch (CodeUnitInsertionException e) {
+                // their is already a datatype defined, use it
                 data = currentProgram.getListing().getDefinedDataContaining(refAddr);
 
             } catch (DataTypeConflictException e) {
-                e.printStackTrace();
-                // ignore data type conflict
+                e.printStackTrace(); // ignore data type conflict
             }
 
             if (data != null && data.getDataType().getSettingsDefinitions() != null) {
                 constantPropagationAnalyzer.markDataAsConstant(data);
             }
 
-            labelAddress(refAddr);
+            labelAddress(refAddr); // label the addr
         }
 
+        /**
+         * Finds the refAddr in the a2l file to label it in the decompiler
+         *
+         * @param refAddr
+         */
         private void labelAddress(Address refAddr) {
+            if (sAlreadyLoadedA2lAddresses.add(refAddr) == false) {
+                return; // this address is already labeled
+            }
 
             try {
-                if (a2l == null) {
-                    createLabel(refAddr, "const_" + refAddr, true);
+                if (a2l == null) { // a2l file not provided
+                    createLabel(refAddr, "const_" + refAddr, true); // label it const_ADDR
 
                 } else {
                     // find line number of 0xADDRESS
@@ -220,12 +241,15 @@ public class TricoreLoadConstants extends GhidraScript {
                     }
                     reader.close();
 
-                    if (lineNumberOfLabel != 0) { // found the a2l name
+                    if (lineNumberOfLabel != 0) { // found the a2l name line number
                         try (Stream<String> lines = Files.lines(Paths.get(a2l.getPath()), StandardCharsets.ISO_8859_1)) { // utf8 will crash
-                            String a2lLabel = lines.skip(lineNumberOfLabel).findFirst().get().trim(); // read line
+                            String a2lLabel = lines.skip(lineNumberOfLabel).findFirst().get().trim(); // read the name
                             System.out.println("Loaded a2l label '" + a2lLabel + "' on line " + lineNumberOfLabel);
-                            createLabel(refAddr, a2lLabel, true); // set the name
+                            createLabel(refAddr, a2lLabel, true); // set the name as label
                         }
+
+                    } else {
+                        createLabel(refAddr, "const_" + refAddr, true); // label it const_ADDR
                     }
                 }
 
@@ -235,6 +259,12 @@ public class TricoreLoadConstants extends GhidraScript {
 
         }
 
+        /**
+         * Returns a matching datatype based on the instruction.
+         *
+         * @param instr
+         * @return
+         */
         private DataType getDataType(Instruction instr) {
             if (instr.getMnemonicString().equals("lea")) {
                 return Undefined4DataType.dataType;
@@ -262,8 +292,9 @@ public class TricoreLoadConstants extends GhidraScript {
     @Override
     public void run() throws Exception {
         MessageLog log = new MessageLog();
-        var fact = currentProgram.getAddressFactory().getDefaultAddressSpace();
+        var fact = currentProgram.getAddressFactory().getDefaultAddressSpace(); // get the AddressFactory
 
+        // build address spaces for 0xA, 0xC, 0xD
         MemoryBlockUtils.createUninitializedBlock(currentProgram, false, "A0000000", fact.getAddress(0xA000_0000), 0x0FFF_FFFF, "Memory for A",
                 "SourceBlockA?", true, true, false, log);
 
@@ -276,7 +307,7 @@ public class TricoreLoadConstants extends GhidraScript {
 
         long numInstructions = currentProgram.getListing().getNumInstructions();
         monitor.initialize((int) (numInstructions));
-        monitor.setMessage("Constant Propogation Markup");
+        monitor.setMessage("TriCore Constant Propogation Markup");
 
         // set up the address set to restrict processing
         AddressSet restrictedSet = new AddressSet(currentSelection);
@@ -290,9 +321,6 @@ public class TricoreLoadConstants extends GhidraScript {
 
         }
 
-        DecompInterface decompInterface = new DecompInterface();
-        decompInterface.openProgram(currentProgram);
-
         // iterate over all functions within the restricted set
         FunctionIterator fiter = currentProgram.getFunctionManager().getFunctions(restrictedSet, true);
         while (fiter.hasNext()) {
@@ -305,9 +333,7 @@ public class TricoreLoadConstants extends GhidraScript {
             Address start = func.getEntryPoint();
 
             ConstantPropagationContextEvaluator eval = new TricoreConstantPropagationEvaluator();
-
             SymbolicPropogator symEval = new SymbolicPropogator(currentProgram);
-
             symEval.flowConstants(start, func.getBody(), eval, true, monitor);
         }
     }
