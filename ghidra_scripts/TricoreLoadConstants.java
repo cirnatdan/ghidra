@@ -1,6 +1,6 @@
 //Propagates TriCore register values.
 //@author Alexander Kostenev
-//@category Memory Propagtion
+//@category ERCOSEK Memory Propagation
 //@keybinding
 //@menupath
 //@toolbar
