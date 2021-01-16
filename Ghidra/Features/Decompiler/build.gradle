@@ -564,10 +564,12 @@ model {
 			else if (b.toolChain in Clang) {
 				b.cppCompiler.args "-std=c++11"
 				b.cppCompiler.args "-Wall"
-				b.cppCompiler.args "-O2"			// for DEBUG, comment this line out
+				//b.cppCompiler.args "-O2"			// for DEBUG, comment this line out
 				// b.cppCompiler.args "-g"			// for DEBUG, uncomment	this line
 				b.cppCompiler.args "-Wno-sign-compare"
 				b.cppCompiler.args "-w"
+				b.linker.args "-L/opt/pkg/lib"
+				b.linker.args "-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/lib/"
 				if (b.targetPlatform.operatingSystem.linux) {
 //					b.linker.args "-static"
 				}

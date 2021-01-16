@@ -154,6 +154,8 @@ public class GhidraApplicationLayout extends ApplicationLayout {
 		Collection<ResourceFile> moduleRootDirectories =
 			ModuleUtilities.findModuleRootDirectories(applicationRootDirs, new LinkedHashSet<>());
 
+		moduleRootDirectories.add(new ResourceFile(applicationInstallationDir + "/PcodeFiles/Main"));
+
 		// Find installed extension modules
 		for (ResourceFile extensionInstallDir : extensionInstallationDirs) {
 			File[] extensionModuleDirs =

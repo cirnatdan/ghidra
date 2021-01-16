@@ -71,6 +71,8 @@ public class GhidraJarBuilder implements GhidraLaunchable {
 				includedModules.add(module);
 			}
 		}
+		addModule("Main");
+		addModule("Python");
 
 		filters.add(new FileExtensionFilter());
 	}

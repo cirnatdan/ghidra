@@ -160,6 +160,8 @@ model {
 				else if (toolChain in Clang) {
 					cCompiler.args "-DHAVE_STDLIB_H"
 					cCompiler.args "-DHAVE_STRING_H"
+					b.linker.args "-L/opt/pkg/lib"
+					b.linker.args "-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/lib/"
 				}
 			}
 			else if (version.equals(v24)) {
@@ -178,6 +180,8 @@ model {
 					cCompiler.args "-DMAIN_CPLUS_DEM"
 					cCompiler.args "-DHAVE_STDLIB_H"
 					cCompiler.args "-DHAVE_STRING_H"
+					b.linker.args "-L/opt/pkg/lib"
+					b.linker.args "-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk/usr/lib/"
 				}
 			}
 		

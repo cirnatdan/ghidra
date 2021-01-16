@@ -1,0 +1,45 @@
+plugins {
+    id "application"
+}
+
+apply from: "$rootProject.projectDir/gradle/distributableGhidraModule.gradle"
+apply from: "$rootProject.projectDir/gradle/javaProject.gradle"
+apply from: "$rootProject.projectDir/gradle/jacocoProject.gradle"
+apply from: "$rootProject.projectDir/gradle/javaTestProject.gradle"
+apply plugin: 'eclipse'
+eclipse.project.name = 'PcodeFiles'
+
+sourceCompatibility = 11
+application {
+    mainClassName = "ghidra.GhidraLauncher"
+    applicationDefaultJvmArgs = ['-Djava.system.class.loader=ghidra.GhidraClassLoader', '-Xshare:off', 'pcodefiles.PcodeFilesRun']
+}
+
+task runApp(type: JavaExec) {
+    jvmArgs('-Djava.system.class.loader=ghidra.GhidraClassLoader', '-Xshare:off')
+    args ('pcodefiles.PcodeFilesRun')
+    classpath += project.configurations.runtimeClasspath
+    classpath += files('build/libs/Main.jar')
+    main = "pcodefiles.PcodeFilesLauncher"
+}
+
+dependencies {
+    implementation project(':Utility')
+    implementation project(':Base')
+    implementation project(':Generic')
+    implementation project(':Docking')
+    implementation project(':Graph')
+    implementation project(':SoftwareModeling')
+    implementation project(':DB')
+    implementation project(':Project')
+    implementation project(':Python')
+
+    compileOnly "junit:junit:4.12"
+}
+
+rootProject.assembleDistribution {
+    from (this.project.file("support/debug.sh"))
+    from (this.project.file("support/launch.sh"))
+    from (this.project.file("support/runPcodeFiles"))
+    from (this.project.file("support/runPcodeFiles.bat"))
+}

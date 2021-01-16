@@ -962,7 +962,7 @@ public class GhidraSourceBundle extends GhidraBundle {
 				BundleJavaManager bundleJavaManager = new MyBundleJavaManager(
 					bundleHost.getHostFramework(), javaFileManager, options);) {
 			Iterable<? extends JavaFileObject> sourceFiles =
-				javaFileManager.getJavaFileObjectsFromPaths(List.of(activatorSourceFileName));
+				javaFileManager.getJavaFileObjectsFromFiles(List.of(activatorSourceFileName.toFile()));
 			DiagnosticCollector<JavaFileObject> diagnostics =
 				new DiagnosticCollector<JavaFileObject>();
 			JavaCompiler.CompilationTask task = compiler.getTask(writer, bundleJavaManager,

@@ -21,13 +21,18 @@ apply from: "gradle/support/settingsUtil.gradle"
  *******************************************************************************************/
 
 includeProjects('Ghidra/Dev')
-includeProjects('Ghidra/Extensions')
+//includeProjects('Ghidra/Extensions')
 includeProjects('Ghidra/Framework')
-includeProjects('Ghidra/Features')
+//includeProjects('Ghidra/Features')
+includeProject('Base', 'Ghidra/Features', true)
+includeProject('FunctionGraph', 'Ghidra/Features', true)
+includeProject('Python', 'Ghidra/Features', true)
 includeProjects('Ghidra/Configurations')
-includeProjects('Ghidra/Processors')
+//includeProjects('Ghidra/Processors')
 includeProjects('Ghidra/Test')
-includeProjects('GPL')
+//includeProjects('GPL')
+includeProject('tricore', 'Ghidra/Processors', true)
+includeProjects('PcodeFiles')
 
 /*******************************************************************************************
  * Include miscellaneous support modules
@@ -37,12 +42,12 @@ includeProject('LaunchSupport', 'GhidraBuild', true)
 includeProject('Skeleton', 'GhidraBuild', true)
 includeProject('BuildFiles', 'GhidraBuild', true)
 includeProject('GhidraTest', '.', true)
-includeProject('decompile', 'Ghidra/Features/Decompiler/src', true)
+//includeProject('decompile', 'Ghidra/Features/Decompiler/src', true)
 includeProject('RuntimeScripts', 'Ghidra', true)
-includeProject('IDAPro', 'GhidraBuild', true)
-includeProject('GhidraDocs', '.', true)
-includeProjects('GhidraBuild/EclipsePlugins/GhidraDev') // requires Eclipse PDE
-includeProjects('GhidraBuild/EclipsePlugins/GhidraSleighEditor') // requires Eclipse DSL
+//includeProject('IDAPro', 'GhidraBuild', true)
+//includeProject('GhidraDocs', '.', true)
+//includeProjects('GhidraBuild/EclipsePlugins/GhidraDev') // requires Eclipse PDE
+//includeProjects('GhidraBuild/EclipsePlugins/GhidraSleighEditor') // requires Eclipse DSL
 
 /*******************************************************************************************
  * Apply additional Ghidra respositories

@@ -346,9 +346,9 @@ task assembleDistribution (type: Copy) {
 	/////////////////
 	// JAVADOCS
 	/////////////////
-	from (zipJavadocs) {
-		into 'docs'
-	}
+//	from (zipJavadocs) {
+//		into 'docs'
+//	}
 	
 	////////////////
 	// Patch Readme
@@ -521,7 +521,7 @@ task createInstallationZip(type: Zip) { t ->
 	}
 	
 	doLast {
-		delete file(DISTRIBUTION_DIR.getPath() + "/" + ZIP_DIR_PREFIX)
+		//delete file(DISTRIBUTION_DIR.getPath() + "/" + ZIP_DIR_PREFIX)
 	}
 }
 

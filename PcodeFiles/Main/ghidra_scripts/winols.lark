@@ -1,0 +1,58 @@
+start: (global_command | global_block)*
+
+global_command: REQUIRES_WINOLS ESCAPED_STRING
+	| REQUIRES_HEXDUMP
+	| requires_map
+	| replace_mode
+
+requires_map: REQUIRES_MAP
+	| REQUIRES_MAP "\[" INT INT "\]"
+
+replace_mode: REPLACE_MODE MODE_PARAMETER
+	| REPLACE_MODE MODE_PARAMETER MODE_PARAMETER
+	| REPLACE_MODE MODE_PARAMETER MODE_PARAMETER MODE_PARAMETER
+	| REPLACE_MODE "all"
+
+global_block: BEGIN_REQUIRES non_global_command+ END_REQUIRES -> block_requires
+	| BEGIN_EXECUTABLE (non_global_command|insert_map_block)+ END_EXECUTABLE -> block_executable
+
+insert_map_block: BEGIN_INSERT_MAP GROUP_NAME non_global_command+ END_INSERT_MAP
+
+non_global_command: CHECK_PROPERTY ESCAPED_STRING ESCAPED_STRING -> check_property
+	| SEARCH GROUP_NAME DATA_ORGANISATION ADDRESS DEVIATION TOLERANCE ESCAPED_STRING -> search
+	| SET_MAP_PROPERTY ESCAPED_STRING ESCAPED_STRING -> set_map_property
+
+
+
+REQUIRES_WINOLS: "requires_winols"
+REQUIRES_HEXDUMP: "requires_hexdump"
+REQUIRES_MAP: "requires_map"
+REPLACE_MODE: "replace_mode"
+BEGIN_REQUIRES: "begin_requires"
+END_REQUIRES: "end_requires"
+BEGIN_EXECUTABLE: "begin_executable"
+END_EXECUTABLE: "end_executable"
+BEGIN_INSERT_MAP: "begin_insert_map"
+END_INSERT_MAP: "end_insert_map"
+SEARCH: "search"
+SEARCH_BY_MAPID: "search_by_mapid"
+REPLACE: "replace"
+UNIQUE: "unique"
+SET_MAP_PROPERTY: "set_map_property"
+CHECK_PROPERTY: "check_property"
+MESSAGEBOX: "MessageBox"
+MODE_PARAMETER: "percent"|"absolute"|"difference2"
+DATA_ORGANISATION: "eLoHiLoHi"|"eHiLoHiLo"|"eByte"|"eLoHi"|"eHiLo"
+DEVIATION: INT
+TOLERANCE: INT "%"
+GROUP_NAME: WORD INT
+ADDRESS: "0x" HEXDIGIT+
+COMMENT: "//" /[^\n]/*
+%ignore COMMENT
+%import common.WS
+%ignore WS
+%import common.ESCAPED_STRING
+%import common.INT
+%import common.NUMBER
+%import common.WORD
+%import common.HEXDIGIT
