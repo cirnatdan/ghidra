@@ -42,7 +42,7 @@ public class WinOLSAnalyzer {
         options.setPreScripts(new ArrayList<String>() {{ add(analyze_possible_offsets); }});
         options.setPostScriptsWithArgs(
                 new ArrayList<Pair<String,String[]>>() {{
-                    add( new Pair<>(parse_winolsscript, new String[]{winOLSScript.getAbsolutePath()}));
+                    add( new Pair<>(parse_winolsscript, new String[]{winOLSScript.getAbsolutePath(), outputDir.getAbsolutePath()}));
                 }}
         );
 
