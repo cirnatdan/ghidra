@@ -83,15 +83,15 @@ def run():
                 continue
 
             # compute size
+            data_ptr = start_of_data.add(offset.getValue())
+            data_addr = getDataAt(data_ptr)
+            if data_addr is None:
+                data_addr = createData(data_ptr, Pointer32DataType())
+            next_data_ptr_addr = start_of_data.add(offset.getValue() + 4)
+            next_data_ptr = getDataAt(next_data_ptr_addr)
+            if next_data_ptr is None:
+                next_data_ptr = createData(next_data_ptr_addr, Pointer32DataType())
             if group.getId() in ["KF00", "KF06", "KF07"]:
-                data_ptr = start_of_data.add(offset.getValue())
-                data_addr = getDataAt(data_ptr)
-                if data_addr is None:
-                    data_addr = createData(data_ptr, Pointer32DataType())
-                next_data_ptr_addr = start_of_data.add(offset.getValue() + 4)
-                next_data_ptr = getDataAt(next_data_ptr_addr)
-                if next_data_ptr is None:
-                    next_data_ptr = createData(next_data_ptr_addr, Pointer32DataType())
                 size = next_data_ptr.getValue().subtract(data_addr.getValue()) / group.getDataTypeSize()
             print("Found {} at {} with size {}".format(group.getName(), data_addr, size))
 
