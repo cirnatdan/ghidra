@@ -53,47 +53,53 @@ def run():
             group.setName(line[1])
             group.setGroupType(line[2])
             group.setDataOrg(line[3])
-            patterns = line[3:]
+            initial_offset = int(line[4])
+            patterns = line[5:]
 
+            offsets = set()
             for pattern in patterns:
                 code_location = findPattern(pattern)
                 if code_location is not None:
-                    break
-                if code_location is None:
-                    print("Trying more tolerant search for {}".format(group.getId()))
-                    code_location = findPatternFuzzy(pattern)
+                    print("{} code found at {}".format(group.getId(), code_location))
+                    ghidra_app.disassemble(code_location)
 
-            if code_location is None:
-                print("{} code could not be found with pattern {}".format(group.getId(), pattern))
-                continue
-            print("{} code found at {}".format(group.getId(), code_location))
-            ghidra_app.disassemble(code_location)
+                    instruction = listing.getInstructionAt(code_location)
+                    input = instruction.getInputObjects()
+                    if type(input[1]).__name__ != "Register":
+                        input.reverse()
 
-            instruction = listing.getInstructionAt(code_location)
+                    if input[1].getName() == 'a9':
+                        offset = input[0]
+                        print("Found offset {} at 0x{}".format(offset, instruction.getAddress()))
+                    else:
+                        print("Could not find offset for {}".format(group.getId()))
+                        continue
+                    offsets |= {offset.getValue()}
+                    closest_offset = offset.getValue() # initial value
+                else:
+                    print("{} code could not be found with pattern {}".format(group.getId(), pattern))
 
-            input = instruction.getInputObjects()
-            if type(input[1]).__name__ != "Register":
-                input.reverse()
+            probable_address = {}
+            for offset in offsets:
+                # compute size
+                data_ptr = start_of_data.add(offset)
+                data_addr = getDataAt(data_ptr)
+                if data_addr is None:
+                    data_addr = createData(data_ptr, Pointer32DataType())
+                probable_address[offset] = data_addr
+                next_data_ptr_addr = start_of_data.add(offset + 4)
+                next_data_ptr = getDataAt(next_data_ptr_addr)
+                if next_data_ptr is None:
+                    next_data_ptr = createData(next_data_ptr_addr, Pointer32DataType())
+                probable_size = next_data_ptr.getValue().subtract(data_addr.getValue()) / group.getDataTypeSize()
+                print("Found probable {} at {} with size {}".format(group.getName(), data_addr, probable_size))
+                if abs(offset - initial_offset) < abs(closest_offset - initial_offset):
+                    closest_offset = offset
 
-            if input[1].getName() == 'a9':
-                offset = input[0]
-                print("Found offset {} at 0x{}".format(offset, instruction.getAddress()))
-            else:
-                print("Could not find offset for {}".format(group.getId()))
-                continue
-
-            # compute size
-            data_ptr = start_of_data.add(offset.getValue())
-            data_addr = getDataAt(data_ptr)
-            if data_addr is None:
-                data_addr = createData(data_ptr, Pointer32DataType())
-            next_data_ptr_addr = start_of_data.add(offset.getValue() + 4)
-            next_data_ptr = getDataAt(next_data_ptr_addr)
-            if next_data_ptr is None:
-                next_data_ptr = createData(next_data_ptr_addr, Pointer32DataType())
             if group.getId() in ["KF00", "KF06", "KF07"]:
-                size = next_data_ptr.getValue().subtract(data_addr.getValue()) / group.getDataTypeSize()
-            print("Found {} at {} with size {}".format(group.getName(), data_addr, size))
+                size = probable_size
+
+            print("Closest offset is 0x{:x}".format(closest_offset))
 
             for_export["maps"].append({
                 "name": group.getName(),
@@ -102,7 +108,7 @@ def run():
                     "x": 1,
                     "y": size,
                 },
-                "address": utils.clean_hex(data_addr.getValue().getOffset() - 0x80000000)
+                "address": utils.clean_hex(probable_address[closest_offset].getValue().getOffset() - 0x80000000)
             })
 
     print(json.JSONEncoder().encode(for_export))

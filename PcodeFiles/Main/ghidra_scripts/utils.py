@@ -34,15 +34,16 @@ def find_end_of_code():
 			found = last_addr
 			last_addr = last_addr.add(16)
 	ghidra_app.disassemble(found)
-
 	return found
 
 def find_data_sector():
 	end_of_code = find_end_of_code()
+	start_of_data = None
 	if end_of_code is not None:
-		start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\x80.{2}\x30\x80")
+		start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\xa0.{2}\x30\xa0")
 	if start_of_data is not None:
 		return start_of_data
+		start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\x80.{2}\x30\x80")
 	return ghidra_app.findBytes(ghidra_app.toAddr(0x80004000), this.data_sector_patterns["BMW"])
 
 

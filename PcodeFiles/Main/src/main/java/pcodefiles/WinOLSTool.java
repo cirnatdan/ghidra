@@ -113,11 +113,12 @@ public class WinOLSTool extends PluginTool implements OptionsChangeListener {
 
 		createActions();
 
-//		try {
-//			this.addPlugin(ConsolePlugin.class.getName());
-//		} catch (PluginException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			this.addPlugin(ScriptMgrPlugin.class.getName());
+			this.addPlugin(ConsolePlugin.class.getName());
+		} catch (PluginException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private void createActions() {

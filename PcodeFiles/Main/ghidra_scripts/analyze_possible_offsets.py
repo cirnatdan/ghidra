@@ -23,6 +23,7 @@ a9_access_patterns = [
 ]
 
 def run():
+	print("Looking for possible offsets instructions in " + currentProgram.toString())
 	data_sector_addr = utils.find_data_sector()
 	for p in a9_access_patterns:
 		addr = findBytes(toAddr(0x80004000), p)
@@ -32,8 +33,6 @@ def run():
 			#print("Disassembling binary at {} ".format(addr))
 			disassemble(addr)
 			addr = findBytes(addr.add(1), p)
-
-
 
 if __name__ == '__main__':
 	run()

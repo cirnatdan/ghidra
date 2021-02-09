@@ -115,11 +115,8 @@ def get_instructions_pattern(code_units):
 		pattern += "\\x{:02x}.{{{}}}".format(cu.getUnsignedByte(0), len(bytez) - 1)
 
 def openWinOLSScript():
-	if isRunningHeadless():
-		return open(getScriptArgs()[0])
-	else:
-		return open(getState().getProject().getSaveableData("WINOLS").getFile("winolsscript", None).getAbsolutePath())
-		
+	return open(getScriptArgs()[0])
+
 def main():
 	parser = Lark_StandAlone()
 
@@ -140,7 +137,7 @@ def main():
 		print("{} {}".format(i[0].getId(), hex(i[1])))
 	print("Not Found:")
 	for i in this.not_found_maps:
-		print("{} {}, closest: {} {}".format(i[0], hex(i[1]), i[2], i[2].getAddress() if i[2] else None))
+		print("{} {}, closest: {} {}".format(i[0].getId(), hex(i[1]), i[2], i[2].getAddress() if i[2] else None))
 
 	data_sector_addr = utils.find_data_sector()
 	print("Data sector starts at: {}".format(data_sector_addr))
@@ -152,7 +149,7 @@ def main():
 		map_offset = get_map_offset(data_sector_addr, toAddr(m[1]))
 		print("{} offset: {}".format(group.getId(), hex(map_offset)))
 		code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
-		line = [group.getId(), group.getName(), str(group.getGroupType()), group.getDataOrg()]
+		line = [group.getId(), group.getName(), str(group.getGroupType()), group.getDataOrg(), str(map_offset)]
 		while code_addr is not None:
 			line.append(get_instructions_pattern(listing.getCodeUnits(code_addr, True)))
 			code_addr = find_offset_in_code(listing.getInstructions(code_addr.add(16), True), map_offset)

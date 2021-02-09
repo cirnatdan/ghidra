@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class WinOLSAnalyzer {
-    public static void runAnalysis(File winOLSScript, List<File> exampleFile, List<File> inputFiles, File outputDir) {
+public class WinOLSAnalyzerHeadless {
+    public static void runAnalysis(File winOLSScript, List<File> exampleFile, List<File> inputFiles, File outputDir, boolean reuseAnalysis) {
         //find scripts
         ResourceFile ghidraScriptsDir = null;
         if (Path.fromPathString(Path.GHIDRA_HOME + "/../PcodeFiles/Main/ghidra_scripts").exists()) {
@@ -61,6 +61,7 @@ public class WinOLSAnalyzer {
                     exampleFile);
 
             options.enableAnalysis(false);
+            options.enableOverwriteOnConflict(true);
             options.setPreScripts(new ArrayList<String>());
             options.setPostScriptsWithArgs(
                     new ArrayList<Pair<String,String[]>>() {{

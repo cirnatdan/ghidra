@@ -17,4 +17,4 @@ SCRIPT_DIR="${SCRIPT_FILE%/*}"
 
 # Launch Ghidra in debug mode
 # DEBUG_ADDRESS set via environment for launch.sh
-DEBUG_ADDRESS=${DEBUG_ADDRESS} "${SCRIPT_DIR}"/launch.sh "${LAUNCH_MODE}" PcodeFiles "${MAXMEM}" "" pcodefiles.PcodeFilesRun "$@"
+DEBUG_ADDRESS=${DEBUG_ADDRESS} "${SCRIPT_DIR}"/launch.sh bg PcodeFiles "${MAXMEM}" "" pcodefiles.PcodeFilesRun "$@"

@@ -15,6 +15,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.*;
 import java.util.List;
@@ -29,11 +30,13 @@ public class WinOLSPanel extends JPanel {
     private JTextField winolsScriptField;
     private Map<String,GhidraFileChooser> fileChoosers = new HashMap<String,GhidraFileChooser>();
     private Map<String,List<File>> selectedFiles = new HashMap<>();
+    private boolean reuseAnalysis;
     private FrontEndPlugin frontEndPlugin;
 
     public WinOLSPanel(FrontEndPlugin plugin) {
         super();
         frontEndPlugin = plugin;
+        reuseAnalysis = true;
 
         setBorder(BorderFactory.createTitledBorder("Process .winolsscript"));
 
@@ -86,6 +89,16 @@ public class WinOLSPanel extends JPanel {
             }
         });
 
+        JCheckBox reuseAnalysisCheckbox = new JCheckBox("Reuse firmware and winolsscript analysis (saves time)");
+        reuseAnalysisCheckbox.setSelected(reuseAnalysis);
+        reuseAnalysisCheckbox.addItemListener(e -> {
+            if (ItemEvent.SELECTED == e.getStateChange()) {
+                reuseAnalysis = true;
+            } else if (ItemEvent.DESELECTED == e.getStateChange()) {
+                reuseAnalysis = false;
+            }
+        });
+
         JLabel inputFilesLabel = new GDLabel("Input files :", SwingConstants.RIGHT);
         JTextField inputFilesField =  new JTextField(25);
         inputFilesField.setName(INPUTFILES);
@@ -110,19 +123,14 @@ public class WinOLSPanel extends JPanel {
         outputFilesField.setName(OUTPUTDIR);
 
         JButton outputFilesBrowseButton = ButtonPanelFactory.createButton(ButtonPanelFactory.BROWSE_TYPE);
-        outputFilesBrowseButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                displayFileChooser(
-                        outputFilesField,
-                        "Select output directory for JSON files",
-                        "Select output directory",
-                        "Select output directory for JSON files",
-                        GhidraFileChooserMode.DIRECTORIES_ONLY,
-                        false
-                );
-            }
-        });
+        outputFilesBrowseButton.addActionListener(e -> displayFileChooser(
+                outputFilesField,
+                "Select output directory for JSON files",
+                "Select output directory",
+                "Select output directory for JSON files",
+                GhidraFileChooserMode.DIRECTORIES_ONLY,
+                false
+        ));
 
         JButton processButton = ButtonPanelFactory.createButton("Process files");
         processButton.addActionListener(
@@ -198,6 +206,14 @@ public class WinOLSPanel extends JPanel {
         gbc.anchor = GridBagConstraints.EAST;
         gbl.setConstraints(exampleFileBrowseButton, gbc);
         this.add(exampleFileBrowseButton);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = ++y;
+        gbc.insets.left = 10;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbl.setConstraints(reuseAnalysisCheckbox, gbc);
+        this.add(reuseAnalysisCheckbox);
 
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
@@ -285,7 +301,7 @@ public class WinOLSPanel extends JPanel {
         List<File> files = fileChooser.getSelectedFiles();
         if (multiSelectionEnabled) {
             fileField.setText(files.toString());
-        } else {
+        } else if (!files.isEmpty()){
             fileField.setText(files.get(0).toString());
         }
 
@@ -324,5 +340,9 @@ public class WinOLSPanel extends JPanel {
 
         this.fileChoosers.put(name, fileChooser);
         return fileChooser;
+    }
+
+    public boolean reuseAnalysis() {
+        return reuseAnalysis;
     }
 }
