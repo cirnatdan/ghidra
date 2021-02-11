@@ -11,4 +11,4 @@ setlocal
 
 ::set MAXMEM=768M
 
-call "%~dp0support\launch.bat" bg Ghidra "%MAXMEM%" "" pcodefiles.PcodeFilesRun %*
+call "%~dp0support\launch.bat" bg PcodeFiles "%MAXMEM%" "" pcodefiles.PcodeFilesRun %*
