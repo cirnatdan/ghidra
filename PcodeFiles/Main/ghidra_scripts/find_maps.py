@@ -30,6 +30,14 @@ def findPatternFuzzy(pattern):
     pattern = pattern[:8]
     return findPattern(pattern)
 
+def readSizeReuse(filepath):
+    sizeReuse = {}
+    with open(filepath) as file:
+        for line in file:
+            line = line.strip().split("::")
+            sizeReuse[line[0]] = line[1]
+
+    return sizeReuse
 
 def run():
     start_of_data = utils.find_data_sector()
@@ -46,6 +54,7 @@ def run():
         "softwareVersion": software_version,
         "maps": []
     }
+    found_groups = {}
     with open(os.path.join(getScriptArgs()[0],"code.patterns")) as file:
         for line in file:
             line = line.strip().split("::")
@@ -54,7 +63,7 @@ def run():
             group.setGroupType(line[2])
             group.setDataOrg(line[3])
             initial_offset = int(line[4])
-            patterns = line[5:]
+            patterns = line[6:]
 
             offsets = set()
             for pattern in patterns:
@@ -87,29 +96,30 @@ def run():
                 if data_addr is None:
                     data_addr = createData(data_ptr, Pointer32DataType())
                 probable_address[offset] = data_addr
-                next_data_ptr_addr = start_of_data.add(offset + 4)
-                next_data_ptr = getDataAt(next_data_ptr_addr)
-                if next_data_ptr is None:
-                    next_data_ptr = createData(next_data_ptr_addr, Pointer32DataType())
-                probable_size = next_data_ptr.getValue().subtract(data_addr.getValue()) / group.getDataTypeSize()
-                print("Found probable {} at {} with size {}".format(group.getName(), data_addr, probable_size))
+                size = utils.compute_map_size(start_of_data, offset, group.getDataTypeSize())
+                print("Found probable {} at {} with size {}".format(group.getName(), data_addr, size))
                 if abs(offset - initial_offset) < abs(closest_offset - initial_offset):
                     closest_offset = offset
 
-            if group.getId() in ["KF00", "KF06", "KF07"]:
-                size = probable_size
-
             print("Closest offset is 0x{:x}".format(closest_offset))
+            group.setSizes(1, size)
+            group.setAddress(probable_address[closest_offset].getValue().getOffset())
+            found_groups[group.getId()] = group
 
-            for_export["maps"].append({
-                "name": group.getName(),
-                "key": group.getId(),
-                "sizes": {
-                    "x": 1,
-                    "y": size,
-                },
-                "address": utils.clean_hex(probable_address[closest_offset].getValue().getOffset() - 0x80000000)
-            })
+    sizeReuse = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
+    for group_id, group in found_groups.items():
+        if group_id in sizeReuse:
+            source_group = found_groups[sizeReuse[group_id]]
+            sizes = source_group.getSizes()
+            group.setSizes(sizes["x"], sizes["y"])
+
+        for_export["maps"].append({
+            "name": group.getName(),
+            "key": group.getId(),
+            "sizes": group.getSizes(),
+            "address": utils.clean_hex(group.getAddress() - 0x80000000)
+        })
+
 
     print(json.JSONEncoder().encode(for_export))
     output_dir = getScriptArgs()[0]

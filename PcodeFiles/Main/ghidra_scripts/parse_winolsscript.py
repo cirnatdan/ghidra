@@ -149,8 +149,9 @@ def main():
 		map_offset = get_map_offset(data_sector_addr, toAddr(m[1]))
 		print("{} offset: {}".format(group.getId(), hex(map_offset)))
 		code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
-		line = [group.getId(), group.getName(), str(group.getGroupType()), group.getDataOrg(), str(map_offset)]
-		while code_addr is not None:
+		computed_size = utils.compute_map_size(data_sector_addr, map_offset, group.getDataTypeSize())
+		line = [group.getId(), group.getName(), str(group.getGroupType()), group.getDataOrg(), str(map_offset), str(computed_size)]
+		while code_addr is not None and len(line) < 10:
 			line.append(get_instructions_pattern(listing.getCodeUnits(code_addr, True)))
 			code_addr = find_offset_in_code(listing.getInstructions(code_addr.add(16), True), map_offset)
 		f.write("::".join(line) + '\n')

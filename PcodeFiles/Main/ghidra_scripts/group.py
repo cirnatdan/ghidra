@@ -13,6 +13,7 @@ class Group:
 	def __init__(self, id):
 		self.id = id
 		self.type = None
+		self.sizes = {}
 
 	def getId(self):
 		return self.id
@@ -40,6 +41,12 @@ class Group:
 
 	def getGroupType(self):
 		return self.type
+
+	def setSizes(self, x, y):
+		self.sizes = {'x': x, 'y': y}
+
+	def getSizes(self):
+		return self.sizes
 
 	# in bytes
 	def getDataTypeSize(self):

@@ -12,10 +12,10 @@ data_sector_patterns = {
 
 code_patterns = {
 	"scriptcode": "\x99" + ".{3}"
-				+ "\x8f" + ".{3}"
-				+ "\x91" + ".{3}"
+				+ "\xa6" + ".{1}"
+				+ "\x37" + ".{3}"
 				+ "\x09" + ".{3}"
-				+ "\xd9" + ".{3}",
+				+ "\x3f" + ".{3}",
 	"end_of_code": "\x00\x90"
 				+ "\x00\x00"
 				+ "\x6d" + ".{3}"
@@ -106,3 +106,14 @@ def clean_hex(d):
      numbers
      '''
 	return hex(d).rstrip('L')
+
+def compute_map_size(data_sector_addr, offset, data_type_size):
+	data_ptr = data_sector_addr.add(offset)
+	data_addr = ghidra_app.getDataAt(data_ptr)
+	if data_addr is None:
+		data_addr = ghidra_app.createData(data_ptr, Pointer32DataType())
+	next_data_ptr_addr = data_sector_addr.add(offset + 4)
+	next_data_ptr = ghidra_app.getDataAt(next_data_ptr_addr)
+	if next_data_ptr is None:
+		next_data_ptr = ghidra_app.createData(next_data_ptr_addr, Pointer32DataType())
+	return next_data_ptr.getValue().subtract(data_addr.getValue()) / data_type_size

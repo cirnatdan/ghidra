@@ -1,10 +1,12 @@
 package pcodefiles.action;
 
+import docking.DockingWindowManager;
+import ghidra.app.services.ConsoleService;
+import ghidra.program.model.lang.LanguageNotFoundException;
+import ghidra.util.SystemUtilities;
 import ghidra.util.task.TaskBuilder;
-import pcodefiles.WinOLSAnalyzerGUI;
-import pcodefiles.WinOLSAnalyzerHeadless;
-import pcodefiles.WinOLSPanel;
-import pcodefiles.WinOLSTool;
+import pcodefiles.*;
+import pcodefiles.ui.SizeReuseDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -31,15 +33,46 @@ public class GenerateJSONActionListener implements ActionListener {
         File outputDir = parent.getSelectedFiles(WinOLSPanel.OUTPUTDIR).get(0);
         boolean reuseAnalysis = parent.reuseAnalysis();
 
-        var analyzerGUI = new WinOLSAnalyzerGUI(winOLSTool.getProjectManager());
-
         //@formatter:off
         TaskBuilder.withRunnable(monitor -> {
-            analyzerGUI.runAnalysis(winOLSScript, exampleFile, inputFiles, outputDir, reuseAnalysis);
+            monitor.setMaximum(1);
+            WinOLSAnalyzerGUI analyzerGUI = null;
+            try {
+                analyzerGUI = new WinOLSAnalyzerGUI(
+                        winOLSTool.getProjectManager(),
+                        AppInfo.getFrontEndTool().getService(ConsoleService.class),
+                        monitor,
+                        reuseAnalysis
+                );
+                monitor.incrementProgress(1);
+            } catch (LanguageNotFoundException languageNotFoundException) {
+                languageNotFoundException.printStackTrace();
+                monitor.cancel();
+                return;
+            }
+            monitor.setIndeterminate(true);
+
+            monitor.setMessage("Parse winolsscript file");
+            var project = analyzerGUI.openProject(winOLSScript);
+            try {
+                var program = analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
+                SystemUtilities.runSwingNow(() ->
+                        DockingWindowManager.showDialog(new SizeReuseDialog(
+                            new File(outputDir.getAbsolutePath(), "code.patterns"),
+                            new File(outputDir.getAbsolutePath(), "size.reuse")
+                        ))
+                );
+
+                analyzerGUI.runAnalysis(winOLSScript, program, inputFiles, outputDir, project);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                monitor.cancel();
+            }
+
             })
             .setTitle("Analyze and find maps")
-            .setCanCancel(false)
-            .setHasProgress(false)
+            .setCanCancel(true)
+            .setHasProgress(true)
             .launchModal()
         ;
         //@formatter:on
