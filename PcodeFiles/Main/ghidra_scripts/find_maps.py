@@ -113,9 +113,13 @@ def run():
             found_groups[group.getId()] = group
 
     sizeReuseRule = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
-    fromGroup = found_groups[sizeReuseRule["from"]]
-    toGroup = found_groups[sizeReuseRule["to"]]
-    sizeToReuse = abs(fromGroup.getAddress() - toGroup.getAddress()) / fromGroup.getDataTypeSize()
+    if sizeReuseRule["from"] in found_groups and sizeReuseRule["to"] in found_groups:
+        fromGroup = found_groups[sizeReuseRule["from"]]
+        toGroup = found_groups[sizeReuseRule["to"]]
+        sizeToReuse = abs(fromGroup.getAddress() - toGroup.getAddress()) / fromGroup.getDataTypeSize()
+    else:
+        print("Groups for size reuse not found: {} {}".format(sizeReuseRule["from"], sizeReuseRule["to"]))
+        sizeReuseRule["folder"] = None
 
     for group_id, group in found_groups.items():
         if group.getFolderName() == sizeReuseRule["folder"]:
