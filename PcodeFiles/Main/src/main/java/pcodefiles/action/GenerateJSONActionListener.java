@@ -56,13 +56,6 @@ public class GenerateJSONActionListener implements ActionListener {
             var project = analyzerGUI.openProject(winOLSScript);
             try {
                 var program = analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
-                SystemUtilities.runSwingNow(() ->
-                        DockingWindowManager.showDialog(new SizeReuseDialog(
-                            new File(outputDir.getAbsolutePath(), "code.patterns"),
-                            new File(outputDir.getAbsolutePath(), "size.reuse")
-                        ))
-                );
-
                 analyzerGUI.runAnalysis(winOLSScript, program, inputFiles, outputDir, project);
             } catch (Exception exception) {
                 exception.printStackTrace();

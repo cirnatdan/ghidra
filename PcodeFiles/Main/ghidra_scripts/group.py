@@ -14,6 +14,7 @@ class Group:
 		self.id = id
 		self.type = None
 		self.sizes = {}
+		self.folderName = ""
 
 	def getId(self):
 		return self.id
@@ -47,6 +48,12 @@ class Group:
 
 	def getSizes(self):
 		return self.sizes
+
+	def setFolderName(self, folderName):
+		self.folderName = folderName
+
+	def getFolderName(self):
+		return self.folderName
 
 	# in bytes
 	def getDataTypeSize(self):

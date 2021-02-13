@@ -10,6 +10,7 @@ import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
 import org.apache.commons.io.FilenameUtils;
 import pcodefiles.action.GenerateJSONActionListener;
+import pcodefiles.action.ReuseMapSizeActionListener;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,6 +55,13 @@ public class WinOLSPanel extends JPanel {
 //            winolsScriptField.setText(lastDirSelected);
 //            winolsScriptField.setCaretPosition(winolsScriptField.getText().length() - 1);
 //        }
+
+        var sizeFromLabel = new JLabel("Use size from ");
+        var groupFromText = new JTextField("KF", 5);
+        var sizeToLabel = new JLabel("-");
+        var groupToText = new JTextField("KF", 5);
+        var folderNameLabel = new JLabel("for folder ");
+        var folderNameText = new JTextField(8);
 
         winOLSBrowseButton = ButtonPanelFactory.createButton(ButtonPanelFactory.BROWSE_TYPE);
         winOLSBrowseButton.addActionListener(new ActionListener() {
@@ -133,10 +141,16 @@ public class WinOLSPanel extends JPanel {
         ));
 
         JButton processButton = ButtonPanelFactory.createButton("Process files");
+
         processButton.addActionListener(
-                new GenerateJSONActionListener(
-                    plugin.getFrontEndTool()
-                )
+                new ReuseMapSizeActionListener(
+                        this,
+                        groupFromText,
+                        groupToText,
+                        folderNameText,
+                        new GenerateJSONActionListener(
+                                plugin.getFrontEndTool()
+                        ))
         );
 
         GridBagLayout gbl = new GridBagLayout();
@@ -150,6 +164,21 @@ public class WinOLSPanel extends JPanel {
         gbc.anchor = GridBagConstraints.WEST;
         gbl.setConstraints(selectECUField, gbc);
         this.add(selectECUField);
+
+        var reuseSizePanel = new JPanel();
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = y;
+        gbc.insets.left = 10;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbl.setConstraints(reuseSizePanel, gbc);
+        this.add(reuseSizePanel);
+        reuseSizePanel.add(sizeFromLabel);
+        reuseSizePanel.add(groupFromText);
+        reuseSizePanel.add(sizeToLabel);
+        reuseSizePanel.add(groupToText);
+        reuseSizePanel.add(folderNameLabel);
+        reuseSizePanel.add(folderNameText);
 
         gbc = new GridBagConstraints();
         gbc.gridx = 0;

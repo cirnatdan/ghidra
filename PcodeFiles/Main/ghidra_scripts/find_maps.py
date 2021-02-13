@@ -35,7 +35,11 @@ def readSizeReuse(filepath):
     with open(filepath) as file:
         for line in file:
             line = line.strip().split("::")
-            sizeReuse[line[0]] = line[1]
+            return {
+                'from': line[0],
+                'to': line[1],
+                'folder': line[2]
+            }
 
     return sizeReuse
 
@@ -63,6 +67,7 @@ def run():
             group.setGroupType(line[2])
             group.setDataOrg(line[3])
             initial_offset = int(line[4])
+            group.setFolderName(line[5])
             patterns = line[6:]
 
             offsets = set()
@@ -98,6 +103,7 @@ def run():
                 probable_address[offset] = data_addr
                 size = utils.compute_map_size(start_of_data, offset, group.getDataTypeSize())
                 print("Found probable {} at {} with size {}".format(group.getName(), data_addr, size))
+                print(offset, initial_offset, closest_offset)
                 if abs(offset - initial_offset) < abs(closest_offset - initial_offset):
                     closest_offset = offset
 
@@ -106,12 +112,15 @@ def run():
             group.setAddress(probable_address[closest_offset].getValue().getOffset())
             found_groups[group.getId()] = group
 
-    sizeReuse = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
+    sizeReuseRule = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
+    fromGroup = found_groups[sizeReuseRule["from"]]
+    toGroup = found_groups[sizeReuseRule["to"]]
+    sizeToReuse = abs(fromGroup.getAddress() - toGroup.getAddress()) / fromGroup.getDataTypeSize()
+
     for group_id, group in found_groups.items():
-        if group_id in sizeReuse:
-            source_group = found_groups[sizeReuse[group_id]]
-            sizes = source_group.getSizes()
-            group.setSizes(sizes["x"], sizes["y"])
+        if group.getFolderName() == sizeReuseRule["folder"]:
+            sizes = group.getSizes()
+            group.setSizes(sizes["x"], sizeToReuse)
 
         for_export["maps"].append({
             "name": group.getName(),
