@@ -56,7 +56,7 @@ public class GenerateJSONActionListener implements ActionListener {
             var project = analyzerGUI.openProject(winOLSScript);
             try {
                 var program = analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
-                analyzerGUI.runAnalysis(winOLSScript, program, inputFiles, outputDir, project);
+                analyzerGUI.runAnalysis(inputFiles, outputDir);
             } catch (Exception exception) {
                 exception.printStackTrace();
                 monitor.cancel();

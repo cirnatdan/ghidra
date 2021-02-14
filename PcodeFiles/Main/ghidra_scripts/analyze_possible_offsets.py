@@ -1,6 +1,7 @@
-import sys,os
+import sys,os,struct
 sys.path.append(os.path.dirname(os.path.realpath(getSourceFile().getAbsolutePath())))
 import __main__ as ghidra_app
+from ghidra.program.model.data import Pointer32DataType
 import utils
 this = sys.modules[__name__]
 

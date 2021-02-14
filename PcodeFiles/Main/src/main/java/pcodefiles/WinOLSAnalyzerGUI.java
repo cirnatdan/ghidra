@@ -107,8 +107,10 @@ public class WinOLSAnalyzerGUI {
                     this,
                     new MessageLog(),
                     monitor);
-            monitor.setMessage("Scanning for  possible offsets");
-            runScript("analyze_possible_offsets.py", new String[]{}, consoleService, exampleProgram);
+            monitor.setMessage("Creating data structure labels");
+            runScript("create_data_labels.py", new String[]{}, exampleProgram);
+            monitor.setMessage("Scanning for possible offsets");
+            runScript("analyze_possible_offsets.py", new String[]{}, exampleProgram);
             if (exampleProgram.canSave())
                 exampleProgram.save("analyzed_possible_offsets", monitor);
         }
@@ -120,19 +122,16 @@ public class WinOLSAnalyzerGUI {
         analysisOptions.setBoolean("ARM Symbol", false);
         analysisOptions.setBoolean("Embedded Media", false);
         analysisMgr.initializeOptions();
-        if (!reuseAnalysis)
-            analysisMgr.reAnalyzeAll(null);
-        analysisMgr.startAnalysis(TaskMonitor.DUMMY, true);
         exampleProgram.endTransaction(transactionId, true);
         if (exampleProgram.canSave())
             exampleProgram.save("analysis", monitor);
         monitor.setMessage("Parsing winolsskript");
-        runScript("parse_winolsscript.py", new String[]{winOLSScript.getAbsolutePath(), outputDir.getAbsolutePath()}, consoleService, exampleProgram);
+        runScript("parse_winolsscript.py", new String[]{winOLSScript.getAbsolutePath(), outputDir.getAbsolutePath()}, exampleProgram);
 
         return exampleProgram;
     }
 
-    public void runAnalysis(File winOLSScript, Program exampleProgram, List<File> inputFiles, File outputDir, Project project) {
+    public void runAnalysis(List<File> inputFiles, File outputDir) {
         try {
             for (File file: inputFiles) {
                 monitor.setMessage("Analyzing " + file.getName());
@@ -152,7 +151,7 @@ public class WinOLSAnalyzerGUI {
                 } else {
                     consoleService.println("Looking for maps in " + file.getName());
                     program.setTemporary(true);
-                    runScript("find_maps.py", new String[]{outputDir.getAbsolutePath()}, consoleService, program);
+                    runScript("find_maps.py", new String[]{outputDir.getAbsolutePath()}, program);
                 }
             }
 
@@ -169,7 +168,7 @@ public class WinOLSAnalyzerGUI {
         }
     }
 
-    private void runScript(String scriptName, String[] args, ConsoleService consoleService, Program exampleProgram) throws Exception {
+    private void runScript(String scriptName, String[] args, Program exampleProgram) throws Exception {
         Msg.info(this,"Running script " + scriptName);
         var scriptFile = new ResourceFile(
                 Path.fromPathString(Path.GHIDRA_HOME + "/../PcodeFiles/Main/ghidra_scripts/" + scriptName).getFile(false)

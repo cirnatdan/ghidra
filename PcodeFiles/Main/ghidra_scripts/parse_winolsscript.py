@@ -106,6 +106,27 @@ def find_offset_in_code(instructions, offset):
 			print("Found offset {} at 0x{}: {}".format(hex(offset), i.getAddress(), i))
 			return i.getAddress()
 
+def has_suboffset_in_code(instructions, suboffset):
+	result = instructions.next().getResultObjects()
+	#print(result)
+	suboffset_register = result[0].getName()
+	#print(suboffset_register)
+
+	i = 0
+	while True:
+		if i > 5:
+			return False
+		instr = instructions.next()
+		input = instr.getInputObjects()
+		if len(input) != 2:
+			continue
+		if type(input[1]).__name__ != "Register":
+			input.reverse()
+		if type(input[1]).__name__ == "Register" and input[1].getName() == suboffset_register and input[0].getValue() == suboffset:
+			print("Found suboffset {} at 0x{}: {}".format(hex(suboffset), instr.getAddress(), instr))
+			return True
+		i += 1
+
 def get_instructions_pattern(code_units):
 	pattern = ""
 	count = 0
@@ -150,18 +171,44 @@ def main():
 		group = m[0]
 		map_offset = get_map_offset(data_sector_addr, toAddr(m[1]))
 		print("{} offset: {}".format(group.getId(), hex(map_offset)))
-		code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
 		line = [
 			group.getId(),
 			group.getName(),
 			str(group.getGroupType()),
 			group.getDataOrg(),
 			str(map_offset),
-			group.getFolderName()
+			group.getFolderName(),
+			str(-1), # no suboffset
 		]
+		code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
 		while code_addr is not None:
 			line.append(get_instructions_pattern(listing.getCodeUnits(code_addr, True)))
 			code_addr = find_offset_in_code(listing.getInstructions(code_addr.add(16), True), map_offset)
+		f.write("::".join(line) + '\n')
+
+	for m in this.not_found_maps:
+		group = m[0]
+		map_offset = get_map_offset(data_sector_addr, m[2].getAddress())
+		print("{} offset: {}".format(group.getId(), hex(map_offset)))
+		map_suboffset = m[1] - m[2].getAddress().getOffset()
+		print("{} suboffset: {}".format(group.getId(), hex(map_suboffset)))
+		line = [
+			group.getId(),
+			group.getName(),
+			str(group.getGroupType()),
+			group.getDataOrg(),
+			str(map_offset),
+			group.getFolderName(),
+			str(map_suboffset),
+		]
+		code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
+		while code_addr is not None:
+			found_suboffset = has_suboffset_in_code(listing.getInstructions(code_addr, True), map_suboffset)
+			if found_suboffset is True:
+				line.append(get_instructions_pattern(listing.getCodeUnits(code_addr, True)))
+				break
+			code_addr = find_offset_in_code(listing.getInstructions(code_addr.add(16), True), map_offset)
+
 		f.write("::".join(line) + '\n')
 
 	f.truncate()

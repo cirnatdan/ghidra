@@ -68,7 +68,8 @@ def run():
             group.setDataOrg(line[3])
             initial_offset = int(line[4])
             group.setFolderName(line[5])
-            patterns = line[6:]
+            suboffset = int(line[6])
+            patterns = line[7:]
 
             offsets = set()
             for pattern in patterns:
@@ -110,6 +111,8 @@ def run():
             print("Closest offset is 0x{:x}".format(closest_offset))
             group.setSizes(1, size)
             group.setAddress(probable_address[closest_offset].getValue().getOffset())
+            if (suboffset > 0):
+                group.setAddress(group.getAddress() + suboffset)
             found_groups[group.getId()] = group
 
     sizeReuseRule = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
@@ -138,7 +141,6 @@ def run():
     output_dir = getScriptArgs()[0]
     with open(os.path.join(output_dir, scriptcode + ".json"), 'w') as jsonFile:
         json.dump(for_export, jsonFile)
-
 
 if __name__ == '__main__':
     run()
