@@ -208,7 +208,7 @@ def main():
                 line.append(get_instructions_pattern(listing.getCodeUnits(code_addr, True)))
                 break
             code_addr = find_offset_in_code(listing.getInstructions(code_addr.add(16), True), map_offset)
-        if len(line) > 8:
+        if len(line) > 7:
             f.write("::".join(line) + '\n')
 
     f.truncate()

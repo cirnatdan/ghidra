@@ -56,6 +56,7 @@ def run():
     for_export = {
         "scriptcode": scriptcode,
         "softwareVersion": software_version,
+        "softwaresize": "{:x}".format(getProgramFile().length()),
         "maps": []
     }
     found_groups = {}
@@ -93,6 +94,10 @@ def run():
                     closest_offset = offset.getValue() # initial value
                 else:
                     print("{} code could not be found with pattern {}".format(group.getId(), pattern))
+
+            if len(offsets) == 0:
+                print("No code or offsets found for group".format(group.getId()))
+                continue
 
             probable_address = {}
             for offset in offsets:
