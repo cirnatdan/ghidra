@@ -37,7 +37,7 @@ public class WinOLSPanel extends JPanel {
     public WinOLSPanel(FrontEndPlugin plugin) {
         super();
         frontEndPlugin = plugin;
-        reuseAnalysis = true;
+        reuseAnalysis = false;
 
         setBorder(BorderFactory.createTitledBorder("Process .winolsscript"));
 

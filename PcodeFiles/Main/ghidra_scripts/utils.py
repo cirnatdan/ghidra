@@ -43,7 +43,7 @@ def find_data_sector():
 		start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\xa0.{2}\x30\xa0")
 	if start_of_data is not None:
 		return start_of_data
-		start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\x80.{2}\x30\x80")
+	start_of_data = ghidra_app.findBytes(end_of_code, ".{2}\x30\x80.{2}\x30\x80")
 	return ghidra_app.findBytes(ghidra_app.toAddr(0x80004000), this.data_sector_patterns["BMW"])
 
 
@@ -98,7 +98,8 @@ def get_softwarever(softwarever_addr):
 	return softwarever
 
 def convert_scriptcode(scriptcode_raw):
-	return "V" + scriptcode_raw[3:7]
+	parts = scriptcode_raw.split("-")
+	return "V" + parts[0][3:]
 
 def clean_hex(d):
 	'''
