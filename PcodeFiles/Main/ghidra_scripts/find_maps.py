@@ -55,7 +55,6 @@ def run():
     listing = currentProgram.getListing()
     for_export = {
         "scriptcode": scriptcode,
-        "softwareVersion": software_version,
         "softwaresize": "{:x}".format(getProgramFile().length()),
         "maps": []
     }
