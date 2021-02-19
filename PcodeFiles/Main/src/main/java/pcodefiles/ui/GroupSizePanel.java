@@ -58,7 +58,7 @@ public class GroupSizePanel extends JPanel {
         for (var group: groups) {
             groupIdLabel = new Label(group.getId());
             groupNameLabel = new Label(group.getName());
-            groupSizeLabel = new Label(String.valueOf(group.getSize()));
+            groupSizeLabel = new Label(String.valueOf(group.getSizes().get("x")));
 
 
             var groupComboBox = new JComboBox(groupList.toArray());

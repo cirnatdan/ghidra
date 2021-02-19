@@ -3,10 +3,14 @@ package pcodefiles.action;
 import docking.DockingWindowManager;
 import ghidra.app.services.ConsoleService;
 import ghidra.program.model.lang.LanguageNotFoundException;
-import ghidra.util.SystemUtilities;
+import ghidra.util.Swing;
 import ghidra.util.task.TaskBuilder;
-import pcodefiles.*;
-import pcodefiles.ui.SizeReuseDialog;
+import ghidra.util.task.TaskLauncher;
+import pcodefiles.AppInfo;
+import pcodefiles.WinOLSAnalyzerGUI;
+import pcodefiles.WinOLSPanel;
+import pcodefiles.WinOLSTool;
+import pcodefiles.ui.ReportDialog;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -14,11 +18,11 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
 
-public class GenerateJSONActionListener implements ActionListener {
+public class ProcessFilesActionListener implements ActionListener {
 
-    private WinOLSTool winOLSTool;
+    private final WinOLSTool winOLSTool;
 
-    public GenerateJSONActionListener(WinOLSTool winOLSTool) {
+    public ProcessFilesActionListener(WinOLSTool winOLSTool) {
         this.winOLSTool = winOLSTool;
     }
 
@@ -61,6 +65,8 @@ public class GenerateJSONActionListener implements ActionListener {
                 exception.printStackTrace();
                 monitor.cancel();
             }
+
+
 
             })
             .setTitle("Analyze and find maps")

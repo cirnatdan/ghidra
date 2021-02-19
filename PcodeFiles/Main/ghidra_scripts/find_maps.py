@@ -13,7 +13,7 @@ import __main__ as ghidra_app
 import utils
 from ghidra.program.model.data import Pointer32DataType
 
-from group import Group
+from pcodefiles.model import Group
 
 
 def findPattern(pattern):
@@ -64,7 +64,7 @@ def run():
             line = line.strip().split("::")
             group = Group(line[0])
             group.setName(line[1])
-            group.setGroupType(line[2])
+            group.setGroupType(int(line[2]))
             group.setDataOrg(line[3])
             initial_offset = int(line[4])
             group.setFolderName(line[5])
@@ -105,7 +105,7 @@ def run():
                 data_addr = getDataAt(data_ptr)
                 if data_addr is None:
                     data_addr = createData(data_ptr, Pointer32DataType())
-                probable_address[offset] = data_addr
+                probable_address[offset] = data_addr.getValue()
                 size = utils.compute_map_size(start_of_data, offset, group.getDataTypeSize())
                 print("Found probable {} at {} with size {}".format(group.getName(), data_addr, size))
                 print(offset, initial_offset, closest_offset)
@@ -114,9 +114,9 @@ def run():
 
             print("Closest offset is 0x{:x}".format(closest_offset))
             group.setSizes(1, size)
-            group.setAddress(probable_address[closest_offset].getValue().getOffset())
+            group.setAddress(probable_address[closest_offset])
             if (suboffset > 0):
-                group.setAddress(group.getAddress() + suboffset)
+                group.setAddress(group.getAddress().add(suboffset))
             found_groups[group.getId()] = group
 
     sizeReuseRule = readSizeReuse(os.path.join(getScriptArgs()[0],"size.reuse"))
@@ -136,10 +136,9 @@ def run():
         for_export["maps"].append({
             "name": group.getName(),
             "key": group.getId(),
-            "sizes": group.getSizes(),
-            "address": utils.clean_hex(group.getAddress() - 0x80000000)
+            "sizes": dict(group.getSizes()),
+            "address": utils.clean_hex(group.getAddress().getOffset() - 0x80000000)
         })
-
 
     print(json.JSONEncoder().encode(for_export))
     output_dir = getScriptArgs()[0]

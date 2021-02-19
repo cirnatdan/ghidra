@@ -9,7 +9,7 @@ import ghidra.framework.preferences.Preferences;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
 import org.apache.commons.io.FilenameUtils;
-import pcodefiles.action.GenerateJSONActionListener;
+import pcodefiles.action.ProcessFilesActionListener;
 import pcodefiles.action.ReuseMapSizeActionListener;
 
 import javax.swing.*;
@@ -148,7 +148,7 @@ public class WinOLSPanel extends JPanel {
                         groupFromText,
                         groupToText,
                         folderNameText,
-                        new GenerateJSONActionListener(
+                        new ProcessFilesActionListener(
                                 plugin.getFrontEndTool()
                         ))
         );

@@ -15,18 +15,18 @@ public class ReuseMapSizeActionListener implements ActionListener {
     private final JTextField groupFromText;
     private final JTextField groupToText;
     private final JTextField folderNameText;
-    private GenerateJSONActionListener generateJSONActionListener;
+    private ProcessFilesActionListener processFilesActionListener;
 
     public ReuseMapSizeActionListener(WinOLSPanel winOLSPanel,
                                       JTextField groupFromText,
                                       JTextField groupToText,
                                       JTextField folderNameText,
-                                      GenerateJSONActionListener generateJSONActionListener) {
+                                      ProcessFilesActionListener processFilesActionListener) {
         this.winOLSPanel = winOLSPanel;
         this.groupFromText = groupFromText;
         this.groupToText = groupToText;
         this.folderNameText = folderNameText;
-        this.generateJSONActionListener = generateJSONActionListener;
+        this.processFilesActionListener = processFilesActionListener;
     }
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -49,6 +49,6 @@ public class ReuseMapSizeActionListener implements ActionListener {
             return;
         }
 
-        generateJSONActionListener.actionPerformed(e);
+        processFilesActionListener.actionPerformed(e);
     }
 }

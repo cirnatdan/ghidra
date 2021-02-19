@@ -9,7 +9,6 @@ apply from: "$rootProject.projectDir/gradle/javaTestProject.gradle"
 apply plugin: 'eclipse'
 eclipse.project.name = 'PcodeFiles'
 
-sourceCompatibility = 11
 application {
     mainClassName = "ghidra.GhidraLauncher"
     applicationDefaultJvmArgs = ['-Djava.system.class.loader=ghidra.GhidraClassLoader', '-Xshare:off', 'pcodefiles.PcodeFilesRun']

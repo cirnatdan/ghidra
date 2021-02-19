@@ -7,7 +7,8 @@ from Queue import Queue
 
 import __main__ as ghidra_app
 import utils
-from group import Group, GroupContainer
+from pcodefiles.model import Group
+from group import GroupContainer
 
 this = sys.modules[__name__]
 
