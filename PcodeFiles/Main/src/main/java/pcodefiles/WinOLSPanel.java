@@ -5,6 +5,7 @@ import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.label.GDLabel;
 import ghidra.framework.GenericRunInfo;
+import ghidra.framework.main.FrontEndTool;
 import ghidra.framework.preferences.Preferences;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
@@ -32,11 +33,11 @@ public class WinOLSPanel extends JPanel {
     private Map<String,GhidraFileChooser> fileChoosers = new HashMap<String,GhidraFileChooser>();
     private Map<String,List<File>> selectedFiles = new HashMap<>();
     private boolean reuseAnalysis;
-    private FrontEndPlugin frontEndPlugin;
+    private WinOLSTool frontEndTool;
 
-    public WinOLSPanel(FrontEndPlugin plugin) {
+    public WinOLSPanel(WinOLSTool tool) {
         super();
-        frontEndPlugin = plugin;
+        frontEndTool = tool;
         reuseAnalysis = false;
 
         setBorder(BorderFactory.createTitledBorder("Process .winolsscript"));
@@ -149,7 +150,7 @@ public class WinOLSPanel extends JPanel {
                         groupToText,
                         folderNameText,
                         new ProcessFilesActionListener(
-                                plugin.getFrontEndTool()
+                                tool
                         ))
         );
 

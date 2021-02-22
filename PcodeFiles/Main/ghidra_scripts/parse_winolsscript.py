@@ -7,7 +7,7 @@ from Queue import Queue
 
 import __main__ as ghidra_app
 import utils
-from pcodefiles.model import Group
+from pcodefiles.model import Group, GroupType
 from group import GroupContainer
 
 this = sys.modules[__name__]
@@ -18,10 +18,12 @@ group_container = GroupContainer()
 groups_address = {}
 groups_types = {}
 
+
 def walkTree(command):
     if command.data == "block_executable":
         for command in command.children:
             walkExecutable(command)
+
 
 def walkExecutable(command):
     if isinstance(command, Token):
@@ -32,6 +34,7 @@ def walkExecutable(command):
         if command.data == "insert_map_block":
             walkInsertMap(command)
 
+
 def walkInsertMap(command):
     groupName = None
     for command in command.children:
@@ -41,10 +44,11 @@ def walkInsertMap(command):
         if isinstance(command, Tree) and command.data == "set_map_property":
             setMapProperty(groupName, command)
 
+
 def walkSearch(command):
     search, group_id, data_organisation, address, deviation, tolerance, pattern = command.children
     group = this.group_container.get(group_id.value)
-    group.setAddress(int(address.value, 16))
+    group.setAddress(toAddr(int(address.value, 16) + 0x80000000))
 
     if group_id.value in this.groups_types:
         this.groups_types[group_id.value] += 1
@@ -53,10 +57,11 @@ def walkSearch(command):
         this.groups_types[group_id.value] = 0
         group.setGroupType(0)
 
+
 def setMapProperty(groupId, command):
     group = this.group_container.get(groupId)
     _, prop, value = command.children
-    prop = prop.value[1:-1] #remove quotes
+    prop = prop.value[1:-1]  # remove quotes
     value = value.value[1:-1]
 
     if prop == "DataOrg":
@@ -67,20 +72,20 @@ def setMapProperty(groupId, command):
     elif prop == "FolderName":
         group.setFolderName(value)
 
+
 def matchMap(group):
-    if group.getGroupType() == Group.GROUP_TYPE_LIST:
+    if group.getGroupType() == GroupType.GROUP_TYPE_LIST:
         address = group.getAddress()
     else:
         address = group.getAddress() + group.getDataTypeSize()
 
-    address = 0x80000000 + address
-
-    symbol = getSymbolAt(toAddr(address))
+    symbol = getSymbolAt(address)
     if symbol is None:
-        near_symbol = getSymbolBefore(toAddr(address))
+        near_symbol = getSymbolBefore(address)
         this.not_found_maps.append([group, address, near_symbol])
     else:
         this.found_maps.append([group, address])
+
 
 def get_map_offset(data_sector_addr, map_addr):
     map_addr_search = hex_string_to_little_endian_pattern(map_addr.toString())
@@ -89,12 +94,14 @@ def get_map_offset(data_sector_addr, map_addr):
         raise Exception("Can't find map pointer for {}".format(map_addr))
     return ptr_addr.subtract(data_sector_addr)
 
+
 def hex_string_to_little_endian_pattern(string):
     byte_list = []
     for i in range(0, len(string), 2):
-        byte_list.append(string[i:i+2])
+        byte_list.append(string[i:i + 2])
     byte_list.append("")
     return "\\x".join(reversed(byte_list))
+
 
 def find_offset_in_code(instructions, offset):
     for i in instructions:
@@ -107,11 +114,12 @@ def find_offset_in_code(instructions, offset):
             print("Found offset {} at 0x{}: {}".format(hex(offset), i.getAddress(), i))
             return i.getAddress()
 
+
 def has_suboffset_in_code(instructions, suboffset):
     result = instructions.next().getResultObjects()
-    #print(result)
+    # print(result)
     suboffset_register = result[0].getName()
-    #print(suboffset_register)
+    # print(suboffset_register)
 
     i = 0
     while True:
@@ -123,10 +131,12 @@ def has_suboffset_in_code(instructions, suboffset):
             continue
         if type(input[1]).__name__ != "Register":
             input.reverse()
-        if type(input[1]).__name__ == "Register" and input[1].getName() == suboffset_register and input[0].getValue() == suboffset:
+        if type(input[1]).__name__ == "Register" and input[1].getName() == suboffset_register and input[
+            0].getValue() == suboffset:
             print("Found suboffset {} at 0x{}: {}".format(hex(suboffset), instr.getAddress(), instr))
             return True
         i += 1
+
 
 def get_instructions_pattern(code_units):
     pattern = ""
@@ -138,8 +148,10 @@ def get_instructions_pattern(code_units):
         bytez = cu.getBytes()
         pattern += "\\x{:02x}.{{{}}}".format(cu.getUnsignedByte(0), len(bytez) - 1)
 
+
 def openWinOLSScript():
     return open(getScriptArgs()[0])
+
 
 def main():
     parser = Lark_StandAlone()
@@ -158,28 +170,28 @@ def main():
 
     print("Found:")
     for i in this.found_maps:
-        print("{} {}".format(i[0].getId(), hex(i[1])))
+        print("{} {}".format(i[0].getId(), hex(i[1].getOffset())))
     print("Not Found:")
     for i in this.not_found_maps:
-        print("{} {}, closest: {} {}".format(i[0].getId(), hex(i[1]), i[2], i[2].getAddress() if i[2] else None))
+        print("{} {}, closest: {} {}".format(i[0].getId(), hex(i[1].getOffset()), i[2], i[2].getAddress() if i[2] else None))
 
     data_sector_addr = utils.find_data_sector()
     print("Data sector starts at: {}".format(data_sector_addr))
 
     listing = getCurrentProgram().getListing()
-    f = open(os.path.join(getScriptArgs()[1],"code.patterns"), "w+")
+    f = open(os.path.join(getScriptArgs()[1], "code.patterns"), "w+")
     for m in this.found_maps:
         group = m[0]
-        map_offset = get_map_offset(data_sector_addr, toAddr(m[1]))
+        map_offset = get_map_offset(data_sector_addr, m[1])
         print("{} offset: {}".format(group.getId(), hex(map_offset)))
         line = [
             group.getId(),
             group.getName(),
-            str(group.getGroupType()),
-            group.getDataOrg(),
+            str(group.getGroupType().getValue()),
+            group.getDataOrg().toString(),
             str(map_offset),
             group.getFolderName(),
-            str(-1), # no suboffset
+            str(-1),  # no suboffset
         ]
         code_addr = find_offset_in_code(listing.getInstructions(toAddr(0x80004000), True), map_offset)
         while code_addr is not None:
@@ -196,7 +208,7 @@ def main():
         line = [
             group.getId(),
             group.getName(),
-            str(group.getGroupType()),
+            str(group.getGroupType().getValue()),
             group.getDataOrg(),
             str(map_offset),
             group.getFolderName(),
@@ -214,6 +226,7 @@ def main():
 
     f.truncate()
     f.close()
+
 
 if __name__ == "__main__":
     print("version2")

@@ -1,8 +1,6 @@
 package pcodefiles.model;
 
 import ghidra.program.model.address.Address;
-import ghidra.program.model.address.AddressSpace;
-import ghidra.program.model.address.GenericAddress;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +16,6 @@ public class Group {
         eFloatLoHi, eFloatHiLo
     }
     DataOrg dataOrg;
-    enum GroupType {
-        GROUP_TYPE_LIST,
-        GROUP_TYPE_MAP_2D,
-        GROUP_TYPE_MAP_3D
-    }
     GroupType type;
     int x;
     int y;

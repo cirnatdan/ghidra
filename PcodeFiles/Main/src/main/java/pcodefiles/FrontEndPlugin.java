@@ -355,7 +355,7 @@ public class FrontEndPlugin extends Plugin
 		statusPanel = new LogPanel(this);
 		statusPanel.setHelpLocation(new HelpLocation("FrontEndPlugin", "StatusWindow"));
 
-		JPanel winOLSPanel = new WinOLSPanel(this);
+		JPanel winOLSPanel = new WinOLSPanel(this.getFrontEndTool());
 
 		// construct the main panel to contain the toolbar and
 		// data tree panels (active and read-only views)
