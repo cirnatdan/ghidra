@@ -4,7 +4,6 @@ import generic.jar.ResourceFile;
 import generic.stl.Pair;
 import generic.util.Path;
 import ghidra.app.plugin.core.analysis.AutoAnalysisManager;
-import ghidra.app.plugin.core.analysis.DWARFAnalyzer;
 import ghidra.app.script.GhidraScriptUtil;
 import ghidra.app.script.GhidraState;
 import ghidra.app.services.ConsoleService;
@@ -32,6 +31,7 @@ import ghidra.util.task.TaskMonitor;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -131,10 +131,12 @@ public class WinOLSAnalyzerGUI {
         return exampleProgram;
     }
 
-    public void runAnalysis(List<File> inputFiles, File outputDir) {
+    public void runAnalysis(Project project, List<File> inputFiles, File outputDir) {
+        var fileNames = new ArrayList<String>();
         try {
             for (File file: inputFiles) {
                 monitor.setMessage("Analyzing " + file.getName());
+                fileNames.add(file.getName());
                 var program = AutoImporter.importByUsingSpecificLoaderClassAndLcs(file,
                         null,
                         BinaryLoader.class,
@@ -157,10 +159,8 @@ public class WinOLSAnalyzerGUI {
 
         } catch (NotFoundException | NotOwnerException | LockException e) {
             Msg.error(this, "Project open Exception: " + e.getMessage(), e);
-            return;
         } catch (IOException | InvalidNameException | CancelledException | VersionException | DuplicateNameException e) {
             Msg.error(this, "Program import Exception: " + e.getMessage(), e);
-            return;
         } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             Msg.error(this, "Script run Exception: " + e.getMessage(), e);
         } catch (Exception e) {

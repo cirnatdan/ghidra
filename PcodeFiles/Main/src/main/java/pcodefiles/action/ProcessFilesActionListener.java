@@ -2,6 +2,7 @@ package pcodefiles.action;
 
 import docking.DockingWindowManager;
 import ghidra.app.services.ConsoleService;
+import ghidra.framework.options.SaveState;
 import ghidra.program.model.lang.LanguageNotFoundException;
 import ghidra.util.Swing;
 import ghidra.util.task.TaskBuilder;
@@ -11,6 +12,7 @@ import pcodefiles.WinOLSAnalyzerGUI;
 import pcodefiles.WinOLSPanel;
 import pcodefiles.WinOLSTool;
 import pcodefiles.ui.ReportDialog;
+import pcodefiles.ui.ReportPanel;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -60,13 +62,12 @@ public class ProcessFilesActionListener implements ActionListener {
             var project = analyzerGUI.openProject(winOLSScript);
             try {
                 var program = analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
-                analyzerGUI.runAnalysis(inputFiles, outputDir);
+                project.setSaveableData("analysis_report", new SaveState());
+                analyzerGUI.runAnalysis(project, inputFiles, outputDir);
             } catch (Exception exception) {
                 exception.printStackTrace();
                 monitor.cancel();
             }
-
-
 
             })
             .setTitle("Analyze and find maps")
@@ -75,7 +76,9 @@ public class ProcessFilesActionListener implements ActionListener {
             .launchModal()
         ;
         //@formatter:on
-
-        //WinOLSAnalyzerHeadless.runAnalysis(winOLSScript, exampleFile, inputFiles, outputDir, reuseAnalysis);
+        var dialog = new ReportDialog(
+                this.winOLSTool.getProjectManager().getActiveProject().getSaveableData("analysis_report")
+        );
+        winOLSTool.showDialog(dialog);
     }
 }

@@ -59,6 +59,7 @@ def run():
         "maps": []
     }
     found_groups = {}
+    not_found_groups = []
     with open(os.path.join(getScriptArgs()[0],"code.patterns")) as file:
         for line in file:
             line = line.strip().split("::")
@@ -96,6 +97,7 @@ def run():
 
             if len(offsets) == 0:
                 print("No code or offsets found for group".format(group.getId()))
+                not_found_groups.append(group.getId())
                 continue
 
             probable_address = {}
@@ -141,6 +143,20 @@ def run():
         })
 
     print(json.JSONEncoder().encode(for_export))
+    project = state.getTool().getProject()
+    report = project.getSaveableData("analysis_report")
+    if len(not_found_groups) > len(found_groups) / 2:
+        ok_files = report.getStrings("okFiles", [])
+        ok_files.append(currentProgram.getName())
+        print(ok_files)
+        report.putStrings("okFiles", ok_files)
+    else:
+        bad_files = report.getStrings("badFiles", [])
+        bad_files.append(currentProgram.getName())
+        print(bad_files)
+        report.putStrings("badFiles", bad_files)
+        report.putStrings(currentProgram.getName(), not_found_groups)
+
     output_dir = getScriptArgs()[0]
     with open(os.path.join(output_dir, scriptcode + ".json"), 'w') as jsonFile:
         json.dump(for_export, jsonFile)
