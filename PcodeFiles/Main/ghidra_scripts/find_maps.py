@@ -125,7 +125,7 @@ def run():
     if sizeReuseRule["from"] in found_groups and sizeReuseRule["to"] in found_groups:
         fromGroup = found_groups[sizeReuseRule["from"]]
         toGroup = found_groups[sizeReuseRule["to"]]
-        sizeToReuse = abs(fromGroup.getAddress() - toGroup.getAddress()) / fromGroup.getDataTypeSize()
+        sizeToReuse = abs(fromGroup.getAddress().getOffset() - toGroup.getAddress().getOffset()) / fromGroup.getDataTypeSize()
     else:
         print("Groups for size reuse not found: {} {}".format(sizeReuseRule["from"], sizeReuseRule["to"]))
         sizeReuseRule["folder"] = None
@@ -145,15 +145,14 @@ def run():
     print(json.JSONEncoder().encode(for_export))
     project = state.getTool().getProject()
     report = project.getSaveableData("analysis_report")
-    if len(not_found_groups) > len(found_groups) / 2:
+    if len(not_found_groups) < len(found_groups) / 2:
         ok_files = report.getStrings("okFiles", [])
         ok_files.append(currentProgram.getName())
-        print(ok_files)
         report.putStrings("okFiles", ok_files)
+        report.putStrings(currentProgram.getName(), not_found_groups)
     else:
         bad_files = report.getStrings("badFiles", [])
         bad_files.append(currentProgram.getName())
-        print(bad_files)
         report.putStrings("badFiles", bad_files)
         report.putStrings(currentProgram.getName(), not_found_groups)
 

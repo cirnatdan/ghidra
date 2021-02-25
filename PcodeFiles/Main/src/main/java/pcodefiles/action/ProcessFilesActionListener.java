@@ -1,18 +1,13 @@
 package pcodefiles.action;
 
-import docking.DockingWindowManager;
 import ghidra.app.services.ConsoleService;
 import ghidra.framework.options.SaveState;
-import ghidra.program.model.lang.LanguageNotFoundException;
-import ghidra.util.Swing;
 import ghidra.util.task.TaskBuilder;
-import ghidra.util.task.TaskLauncher;
 import pcodefiles.AppInfo;
 import pcodefiles.WinOLSAnalyzerGUI;
 import pcodefiles.WinOLSPanel;
 import pcodefiles.WinOLSTool;
 import pcodefiles.ui.ReportDialog;
-import pcodefiles.ui.ReportPanel;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -51,8 +46,8 @@ public class ProcessFilesActionListener implements ActionListener {
                         reuseAnalysis
                 );
                 monitor.incrementProgress(1);
-            } catch (LanguageNotFoundException languageNotFoundException) {
-                languageNotFoundException.printStackTrace();
+            } catch (Exception ex) {
+                ex.printStackTrace();
                 monitor.cancel();
                 return;
             }
@@ -69,6 +64,11 @@ public class ProcessFilesActionListener implements ActionListener {
                 monitor.cancel();
             }
 
+            var dialog = new ReportDialog(
+                    project.getSaveableData("analysis_report")
+            );
+            winOLSTool.showDialog(dialog);
+
             })
             .setTitle("Analyze and find maps")
             .setCanCancel(true)
@@ -76,9 +76,5 @@ public class ProcessFilesActionListener implements ActionListener {
             .launchModal()
         ;
         //@formatter:on
-        var dialog = new ReportDialog(
-                this.winOLSTool.getProjectManager().getActiveProject().getSaveableData("analysis_report")
-        );
-        winOLSTool.showDialog(dialog);
     }
 }
