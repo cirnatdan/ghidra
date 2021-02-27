@@ -176,12 +176,9 @@ class WinOLSAnalyzerGUI(
             Msg.error(this, "Script run Exception: " + e.message, e)
         } catch (e: ClassNotFoundException) {
             Msg.error(this, "Script run Exception: " + e.message, e)
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
-    @Throws(Exception::class)
     private fun runScript(scriptName: String, args: Array<String>, exampleProgram: Program) {
         Msg.info(this, "Running script $scriptName")
         val scriptFile = ResourceFile(

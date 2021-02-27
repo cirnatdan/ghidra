@@ -156,6 +156,8 @@ def run():
         report.putStrings("badFiles", bad_files)
         report.putStrings(currentProgram.getName(), not_found_groups)
 
+    report.putString("{}_scriptcode".format(currentProgram.getName()), scriptcode)
+
     output_dir = getScriptArgs()[0]
     with open(os.path.join(output_dir, scriptcode + ".json"), 'w') as jsonFile:
         json.dump(for_export, jsonFile)

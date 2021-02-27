@@ -69,6 +69,7 @@ public class ReportPanel extends JPanel {
         gbc = new GridBagConstraints();
         gbc.gridx = 1;
         gbc.gridy = y;
+        gbc.gridwidth = 2;
         gbc.insets.left = 10;
         gbc.anchor = GridBagConstraints.WEST;
         gbl.setConstraints(badFilesNr, gbc);
@@ -90,7 +91,9 @@ public class ReportPanel extends JPanel {
         badFilesLabel.setBackground(Color.red);
 
         var notFoundLabel = new JLabel("Groups not found");
-        y++;
+        var scriptcodeLabel = new JLabel("scriptcode");
+
+        ++y;
         gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = y;
@@ -104,7 +107,14 @@ public class ReportPanel extends JPanel {
         gbc.gridx = 1;
         gbc.gridy = y;
         gbc.insets.left = 10;
-        gbc.insets.top = 10;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbl.setConstraints(scriptcodeLabel, gbc);
+        this.add(scriptcodeLabel);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = y;
+        gbc.insets.left = 10;
         gbc.anchor = GridBagConstraints.WEST;
         gbl.setConstraints(notFoundLabel, gbc);
         this.add(notFoundLabel);
@@ -122,6 +132,15 @@ public class ReportPanel extends JPanel {
 
             gbc = new GridBagConstraints();
             gbc.gridx = 1;
+            gbc.gridy = y;
+            gbc.insets.left = 10;
+            gbc.anchor = GridBagConstraints.WEST;
+            var SW = new JLabel(report.getString(file + "_scriptcode", "NOTFOUND"));
+            gbl.setConstraints(SW, gbc);
+            this.add(SW);
+
+            gbc = new GridBagConstraints();
+            gbc.gridx = 2;
             gbc.gridy = y;
             gbc.insets.left = 10;
             gbc.anchor = GridBagConstraints.WEST;
@@ -153,6 +172,15 @@ public class ReportPanel extends JPanel {
 
             gbc = new GridBagConstraints();
             gbc.gridx = 1;
+            gbc.gridy = y;
+            gbc.insets.left = 10;
+            gbc.anchor = GridBagConstraints.WEST;
+            var SW = new JLabel(report.getString(file + "_scriptcode", "NOTFOUND"));
+            gbl.setConstraints(SW, gbc);
+            this.add(SW);
+
+            gbc = new GridBagConstraints();
+            gbc.gridx = 2;
             gbc.gridy = y;
             gbc.insets.left = 10;
             gbc.anchor = GridBagConstraints.WEST;
