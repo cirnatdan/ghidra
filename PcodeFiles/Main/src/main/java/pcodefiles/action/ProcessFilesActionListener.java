@@ -2,7 +2,6 @@ package pcodefiles.action;
 
 import ghidra.app.services.ConsoleService;
 import ghidra.framework.options.SaveState;
-import ghidra.util.Msg;
 import ghidra.util.task.TaskBuilder;
 import pcodefiles.AppInfo;
 import pcodefiles.WinOLSAnalyzerGUI;
@@ -104,6 +103,7 @@ public class ProcessFilesActionListener implements ActionListener {
                 i++;
             }
         }
+        //noinspection ResultOfMethodCallIgnored
         file.renameTo(new File(newName.toString()));
     }
 }

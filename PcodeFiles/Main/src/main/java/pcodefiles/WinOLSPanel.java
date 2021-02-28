@@ -5,7 +5,6 @@ import docking.widgets.filechooser.GhidraFileChooser;
 import docking.widgets.filechooser.GhidraFileChooserMode;
 import docking.widgets.label.GDLabel;
 import ghidra.framework.GenericRunInfo;
-import ghidra.framework.main.FrontEndTool;
 import ghidra.framework.preferences.Preferences;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
@@ -19,8 +18,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.io.File;
-import java.util.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class WinOLSPanel extends JPanel {
     public static final String WINOLSSCRIPT = "WINOLSSCRIPT";

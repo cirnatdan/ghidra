@@ -85,6 +85,7 @@ public class WinOLSTool extends PluginTool implements OptionsChangeListener {
 
 	private WindowListener windowListener;
 	private PluginClassManager pluginClassManager;
+	private FrontEndPlugin frontEndPlugin;
 
 	/**
 	 * Construct a new Ghidra Project Window.
@@ -93,11 +94,14 @@ public class WinOLSTool extends PluginTool implements OptionsChangeListener {
 	 */
 	public WinOLSTool(ProjectManager pm) {
 		super(null, pm, null, null /*tool template*/, false, false, false);
+	}
+
+	public void init(FrontEndPlugin frontEndPlugin) {
 		setToolName("Project Window");
 
 		listeners = WeakDataStructureFactory.createCopyOnWriteWeakSet();
 
-		addFrontEndPlugin();
+		addFrontEndPlugin(frontEndPlugin);
 		ensureSize();
 		windowListener = new WindowAdapter() {
 			@Override
@@ -160,17 +164,17 @@ public class WinOLSTool extends PluginTool implements OptionsChangeListener {
 		return pluginClassManager;
 	}
 
-	private void addFrontEndPlugin() {
-		plugin = new FrontEndPlugin(this);
-		plugin.setProjectManager(getProjectManager());
+	public void addFrontEndPlugin(FrontEndPlugin frontEndPlugin) {
+		this.plugin = frontEndPlugin;
+		frontEndPlugin.setProjectManager(getProjectManager());
 		try {
-			addPlugin(plugin);
+			addPlugin(frontEndPlugin);
 		}
 		catch (PluginException e) {
 			// should not happen
 			Msg.showError(this, getToolFrame(), "Can't Create Project Window", e.getMessage(), e);
 		}
-		compProvider = plugin.getFrontEndProvider();
+		compProvider = frontEndPlugin.getFrontEndProvider();
 
 		showComponentHeader(compProvider, false);
 	}

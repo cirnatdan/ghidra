@@ -15,33 +15,14 @@
  */
 package pcodefiles;
 
-import java.io.File;
-
-import javax.swing.ToolTipManager;
-
 import ghidra.GhidraApplicationLayout;
 import ghidra.GhidraLaunchable;
-import ghidra.GhidraRun;
 import ghidra.GhidraThreadGroup;
-import ghidra.app.plugin.core.osgi.BundleHost;
-import ghidra.app.script.GhidraScriptUtil;
+import ghidra.framework.Application;
+import ghidra.framework.remote.InetNameLookup;
+import ghidra.util.SystemUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import docking.framework.SplashScreen;
-import ghidra.framework.Application;
-import ghidra.framework.client.RepositoryAdapter;
-import ghidra.framework.data.DomainObjectAdapter;
-import ghidra.framework.model.*;
-import ghidra.framework.plugintool.dialog.ExtensionUtils;
-import ghidra.framework.project.DefaultProjectManager;
-import ghidra.framework.remote.InetNameLookup;
-import ghidra.framework.store.LockException;
-import ghidra.program.database.ProgramDB;
-import ghidra.util.*;
-import ghidra.util.exception.UsrException;
-import ghidra.util.task.TaskLauncher;
-import ghidra.util.task.TaskMonitorAdapter;
 
 /**
  * Main Ghidra application class. Creates
@@ -74,25 +55,14 @@ public class PcodeFilesRun implements GhidraLaunchable {
     public void launch(GhidraApplicationLayout layout, String[] args) {
 
         Runnable mainTask = () -> {
-
-            PcodeFilesApplicationConfiguration configuration = new PcodeFilesApplicationConfiguration();
-            configuration.setTaskMonitor(new StatusReportingTaskMonitor());
-            Application.initializeApplication(layout, configuration);
+            var injector = new Injector();
+            Application.initializeApplication(layout, injector.getApplicationConfiguration());
 
             log = LogManager.getLogger(PcodeFilesRun.class);
             log.info("User " + SystemUtilities.getUserName() + " started Ghidra.");
 
-            initializeTooltips();
-
-            ExtensionUtils.cleanupUninstalledExtensions();
-
-            // Allows handling of old content which did not have a content type property
-            DomainObjectAdapter.setDefaultContentClass(ProgramDB.class);
-
-            SystemUtilities.runSwingLater(() -> {
-                String projectPath = processArguments(args);
-                openProject(projectPath);
-            });
+            var mainHelper = injector.getMainHelper();
+            mainHelper.run(args);
         };
 
         // Automatically disable reverse name lookup if failure occurs
@@ -102,148 +72,5 @@ public class PcodeFilesRun implements GhidraLaunchable {
         Thread mainThread = new Thread(new GhidraThreadGroup(), mainTask, "Ghidra");
         mainThread.start();
     }
-
-    private String processArguments(String[] args) {
-        //TODO remove this special handling when possible
-        if (args.length == 1 && (args[0].startsWith("-D") || args[0].indexOf(" -D") >= 0)) {
-            args = args[0].split(" ");
-        }
-        String projectPath = null;
-        for (String arg : args) {
-            if (arg.startsWith("-D")) {
-                String[] split = arg.substring(2).split("=");
-                if (split.length == 2) {
-                    System.setProperty(split[0], split[1]);
-                }
-            }
-            else {
-                projectPath = arg;
-            }
-        }
-        return projectPath;
-    }
-
-    private void updateSplashScreenStatusMessage(final String message) {
-        SystemUtilities.runSwingNow(() -> SplashScreen.updateSplashScreenStatus(message));
-    }
-
-    private void initializeTooltips() {
-        int currentDelay = ToolTipManager.sharedInstance().getDismissDelay();
-        ToolTipManager.sharedInstance().setDismissDelay(currentDelay * 2);
-    }
-
-    /**
-     * Open the specified project or the last active project if projectPath is null.
-     * Makes the project window visible.
-     * @param projectPath optional project to be opened (specifies project file)
-     */
-    private void openProject(String projectPath) {
-
-        updateSplashScreenStatusMessage("Creating project manager...");
-        ProjectManager pm = new GhidraProjectManager();
-        updateSplashScreenStatusMessage("Creating front end tool...");
-        WinOLSTool tool = new WinOLSTool(pm);
-
-        boolean reopen = true;
-        ProjectLocator projectLocator = null;
-        if (projectPath != null) {
-            File projectFile = new File(projectPath);
-            String name = projectFile.getName();
-            if (!name.endsWith(ProjectLocator.getProjectExtension())) {
-                Msg.showInfo(GhidraRun.class, null, "Invalid Project",
-                        "The specified file is not a project file: " + projectPath);
-            }
-            else {
-                projectLocator = new ProjectLocator(projectFile.getParent(), name);
-                reopen = false;
-            }
-        }
-
-        if (Application.isTestBuild()) {
-            Msg.showWarn(GhidraRun.class, tool.getToolFrame(), "Unsupported Ghidra Distribution",
-                    "WARNING! Please be aware that this is an unsupported and uncertified\n" +
-                            "build of Ghidra!  This software may be unstable and data created\n" +
-                            "may be incompatible with future releases.");
-        }
-
-        tool.setVisible(true);
-
-        if (projectLocator != null) {
-            openProject(tool, projectLocator, reopen);
-        }
-    }
-
-    private void openProject(WinOLSTool tool, ProjectLocator projectLocator, boolean reopen) {
-        SplashScreen.updateSplashScreenStatus(
-                (reopen ? "Reopening" : "Opening") + " project: " + projectLocator.getName());
-
-        Runnable r = () -> doOpenProject(tool, projectLocator, reopen);
-        TaskLauncher.launchModal("Opening Project", () -> Swing.runNow(r));
-    }
-
-    private void doOpenProject(WinOLSTool tool, ProjectLocator projectLocator, boolean reopen) {
-        try {
-            ProjectManager pm = tool.getProjectManager();
-            Project activeProject = pm.openProject(projectLocator, true, false);
-            if (activeProject == null) {
-                return;
-            }
-
-            tool.setActiveProject(activeProject);
-
-            RepositoryAdapter repository = activeProject.getRepository();
-            if (repository != null && !repository.isConnected()) {
-                Msg.showInfo(GhidraRun.class, null, "Working Off-Line ",
-                        "Even though you are not connected to the Ghidra Server,\n" +
-                                "you can still work off-line on checked out files or private files.\n" +
-                                "You can also try reconnecting to the server by selecting the connect\n" +
-                                "button on the Ghidra Project Window.\n \n" +
-                                "See the Ghidra Help topic 'Project Repository' for troubleshooting\n" +
-                                "a failed connection.");
-            }
-
-        }
-        catch (Throwable t) {
-            if (t instanceof UsrException) {
-                if (t instanceof LockException) {
-                    Msg.showInfo(GhidraRun.class, null, "Project is Locked",
-                            "Can't open project: " + projectLocator.toString() +
-                                    "\nProject is already locked");
-
-                }
-                else {
-                    Msg.showInfo(GhidraRun.class, null, "Project Open Failed",
-                            "Failed to " + (reopen ? "reopen last" : "open") + " project: " +
-                                    projectLocator.toString() + "\n\n" + t.getClass().getSimpleName() +
-                                    ": " + t.getMessage());
-                }
-            }
-            else {
-                Msg.showError(GhidraRun.class, null, "Project Open Failed",
-                        "Failed to " + (reopen ? "reopen last" : "open") + " project: " +
-                                projectLocator.toString() + "\n\n" + t.getClass().getSimpleName() + ": " +
-                                t.getMessage(),
-                        t);
-
-            }
-            tool.setActiveProject(null);
-        }
-    }
-
-    private class GhidraProjectManager extends DefaultProjectManager {
-        // this exists just to allow access to the constructor
-        public void addDefaultTools(ToolChest tools){}
-    }
 }
 
-class StatusReportingTaskMonitor extends TaskMonitorAdapter {
-    @Override
-    public synchronized void setCancelEnabled(boolean enable) {
-        // Not permitted
-    }
-
-    @Override
-    public void setMessage(String message) {
-        SplashScreen.updateSplashScreenStatus(message);
-    }
-}
