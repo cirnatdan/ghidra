@@ -1,10 +1,15 @@
 package pcodefiles
 
 import docking.framework.SplashScreen
+import ghidra.app.plugin.core.console.ConsolePlugin
+import ghidra.app.services.ConsoleService
 import ghidra.framework.model.ProjectManager
 import ghidra.framework.model.ToolChest
 import ghidra.framework.project.DefaultProjectManager
+import ghidra.program.model.lang.LanguageService
+import ghidra.program.util.DefaultLanguageService
 import ghidra.util.SystemUtilities
+import pcodefiles.action.ProcessFilesActionListener
 import javax.swing.ToolTipManager
 
 class Injector {
@@ -30,6 +35,34 @@ class Injector {
 
     private val frontEndPlugin by lazy {
         createFrontEndPlugin()
+    }
+
+    private val winOLSPanel by lazy {
+        createWinOLSPanel()
+    }
+
+    private val processFilesActionListener by lazy {
+        createProcessFilesActionListener()
+    }
+
+    private val languageService by lazy {
+        createLanguageService()
+    }
+
+    private val consoleService by lazy {
+        createConsoleService()
+    }
+
+    private val consolePlugin by lazy {
+        createConsolePlugin()
+    }
+
+    private fun createConsolePlugin(): ConsolePlugin {
+        return ConsolePlugin(winOLSTool)
+    }
+
+    private fun createConsoleService(): ConsoleService {
+        return winOLSTool.getService(ConsoleService::class.java)
     }
 
     private fun updateSplashScreenStatusMessage(message: String) {
@@ -69,6 +102,18 @@ class Injector {
     }
 
     private fun createFrontEndPlugin(): FrontEndPlugin {
-        return FrontEndPlugin(winOLSTool)
+        return FrontEndPlugin(winOLSTool, winOLSPanel)
+    }
+
+    private fun createWinOLSPanel(): WinOLSPanel {
+        return WinOLSPanel(processFilesActionListener)
+    }
+
+    private fun createProcessFilesActionListener(): ProcessFilesActionListener {
+        return ProcessFilesActionListener(winOLSTool, projectManager, languageService)
+    }
+
+    private fun createLanguageService(): LanguageService {
+        return DefaultLanguageService.getLanguageService()
     }
 }

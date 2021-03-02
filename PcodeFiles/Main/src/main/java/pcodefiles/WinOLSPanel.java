@@ -33,11 +33,9 @@ public class WinOLSPanel extends JPanel {
     private Map<String,GhidraFileChooser> fileChoosers = new HashMap<String,GhidraFileChooser>();
     private Map<String,List<File>> selectedFiles = new HashMap<>();
     private boolean reuseAnalysis;
-    private WinOLSTool frontEndTool;
 
-    public WinOLSPanel(WinOLSTool tool) {
+    public WinOLSPanel(ProcessFilesActionListener processFilesActionListener) {
         super();
-        frontEndTool = tool;
         reuseAnalysis = false;
 
         setBorder(BorderFactory.createTitledBorder("Process .winolsscript"));
@@ -149,9 +147,8 @@ public class WinOLSPanel extends JPanel {
                         groupFromText,
                         groupToText,
                         folderNameText,
-                        new ProcessFilesActionListener(
-                                tool
-                        ))
+                        processFilesActionListener
+                )
         );
 
         GridBagLayout gbl = new GridBagLayout();

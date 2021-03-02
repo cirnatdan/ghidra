@@ -1,7 +1,9 @@
 package pcodefiles.action;
 
 import ghidra.app.services.ConsoleService;
+import ghidra.framework.model.ProjectManager;
 import ghidra.framework.options.SaveState;
+import ghidra.program.model.lang.LanguageService;
 import ghidra.util.task.TaskBuilder;
 import pcodefiles.AppInfo;
 import pcodefiles.WinOLSAnalyzerGUI;
@@ -20,9 +22,15 @@ import java.util.List;
 public class ProcessFilesActionListener implements ActionListener {
 
     private final WinOLSTool winOLSTool;
+    private ProjectManager projectManager;
+    private LanguageService languageService;
 
-    public ProcessFilesActionListener(WinOLSTool winOLSTool) {
+    public ProcessFilesActionListener(WinOLSTool winOLSTool,
+                                      ProjectManager projectManager,
+                                      LanguageService languageService) {
         this.winOLSTool = winOLSTool;
+        this.projectManager = projectManager;
+        this.languageService = languageService;
     }
 
     @Override
@@ -42,10 +50,11 @@ public class ProcessFilesActionListener implements ActionListener {
             WinOLSAnalyzerGUI analyzerGUI = null;
             try {
                 analyzerGUI = new WinOLSAnalyzerGUI(
-                        winOLSTool.getProjectManager(),
-                        AppInfo.getFrontEndTool().getService(ConsoleService.class),
+                        projectManager,
+                        winOLSTool.getService(ConsoleService.class),
                         monitor,
-                        reuseAnalysis
+                        reuseAnalysis,
+                        languageService
                 );
                 monitor.incrementProgress(1);
             } catch (Exception ex) {
@@ -57,23 +66,23 @@ public class ProcessFilesActionListener implements ActionListener {
 
             monitor.setMessage("Parse winolsscript file");
             var project = analyzerGUI.openProject(winOLSScript);
+            project.setSaveableData("analysis_report", new SaveState());
+            var report = project.getSaveableData("analysis_report");
+
             try {
                 analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
-                project.setSaveableData("analysis_report", new SaveState());
-                analyzerGUI.runAnalysis(project, inputFiles, outputDir);
+                for (File file: inputFiles) {
+                    analyzerGUI.runAnalysis(project, file, outputDir);
+                    var scriptcode = report.getString(file.getName() + "_scriptcode", "");
+                    if (!"".equals(scriptcode)) {
+                        renameFile(file, scriptcode);
+                    }
+                }
+
             } catch (Exception exception) {
                 exception.printStackTrace();
                 monitor.cancel();
                 return;
-            }
-
-            var report = project.getSaveableData("analysis_report");
-
-            for (File file: inputFiles) {
-                var scriptcode = report.getString(file.getName() + "_scriptcode", "");
-                if (!"".equals(scriptcode)) {
-                    renameFile(file, scriptcode);
-                }
             }
 
             var dialog = new ReportDialog(

@@ -85,7 +85,6 @@ public class WinOLSTool extends PluginTool implements OptionsChangeListener {
 
 	private WindowListener windowListener;
 	private PluginClassManager pluginClassManager;
-	private FrontEndPlugin frontEndPlugin;
 
 	/**
 	 * Construct a new Ghidra Project Window.

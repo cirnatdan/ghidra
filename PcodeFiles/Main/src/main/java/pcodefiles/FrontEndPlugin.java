@@ -86,6 +86,7 @@ public class FrontEndPlugin extends Plugin
 	private static String PROJECT_EXTENSION = ProjectLocator.getProjectExtension().substring(1);
 
 	private FrontEndProvider frontEndProvider;
+	private WinOLSPanel winOLSPanel;
 
 	/**
 	 * Construct a new FrontEndPlugin. This plugin is constructed once when
@@ -94,8 +95,9 @@ public class FrontEndPlugin extends Plugin
 	 * restored to the state associated with that project.
 	 * @param tool the front end tool
 	 */
-	public FrontEndPlugin(PluginTool tool) {
+	public FrontEndPlugin(PluginTool tool, WinOLSPanel winOLSPanel) {
 		super(tool);
+		this.winOLSPanel = winOLSPanel;
 
 		SystemUtilities.assertTrue(tool instanceof WinOLSTool,
 			"FrontEndPlugin requires a FrontEndTool");
@@ -354,8 +356,6 @@ public class FrontEndPlugin extends Plugin
 		// when there is an active project at start up
 		statusPanel = new LogPanel(this);
 		statusPanel.setHelpLocation(new HelpLocation("FrontEndPlugin", "StatusWindow"));
-
-		JPanel winOLSPanel = new WinOLSPanel(this.getFrontEndTool());
 
 		// construct the main panel to contain the toolbar and
 		// data tree panels (active and read-only views)

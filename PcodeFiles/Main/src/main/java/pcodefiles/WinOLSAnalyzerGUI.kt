@@ -17,8 +17,8 @@ import ghidra.framework.model.ProjectManager
 import ghidra.framework.store.LockException
 import ghidra.program.model.lang.Language
 import ghidra.program.model.lang.LanguageID
+import ghidra.program.model.lang.LanguageService
 import ghidra.program.model.listing.Program
-import ghidra.program.util.DefaultLanguageService
 import ghidra.util.InvalidNameException
 import ghidra.util.Msg
 import ghidra.util.NotOwnerException
@@ -35,14 +35,15 @@ class WinOLSAnalyzerGUI(
     private val projectManager: ProjectManager,
     private val consoleService: ConsoleService,
     private val monitor: TaskMonitor,
-    private val reuseAnalysis: Boolean
+    private val reuseAnalysis: Boolean,
+    private val languageService: LanguageService
 ) {
-    private val language: Language = DefaultLanguageService.getLanguageService().getLanguage(LanguageID("tricore:LE:32:tc176x"))
+    private val language: Language = languageService.getLanguage(LanguageID("tricore:LE:32:tc176x"))
     fun openProject(winOLSScript: File): Project? {
         consoleService.println("Opening project " + winOLSScript.absolutePath)
         val projectLocator = ProjectLocator(GenericRunInfo.getProjectsDirPath(), winOLSScript.name)
-        if (AppInfo.getActiveProject() != null) {
-            AppInfo.getActiveProject().close()
+        if (projectManager.getActiveProject() != null) {
+            projectManager.activeProject.close()
         }
         if (!reuseAnalysis) {
             if (projectManager.projectExists(projectLocator)) {
@@ -125,34 +126,30 @@ class WinOLSAnalyzerGUI(
         return exampleProgram
     }
 
-    fun runAnalysis(project: Project?, inputFiles: List<File>, outputDir: File) {
-        val fileNames = ArrayList<String>()
+    fun runAnalysis(project: Project?, inputFile: File, outputDir: File) {
         try {
-            for (file in inputFiles) {
-                monitor.message = "Analyzing " + file.name
-                fileNames.add(file.name)
-                val program = AutoImporter.importByUsingSpecificLoaderClassAndLcs(
-                    file,
-                    null,
-                    BinaryLoader::class.java,
-                    object : LinkedList<Pair<String?, String?>?>() {
-                        init {
-                            add(Pair("-loader-baseAddr", "0x80000000"))
-                        }
-                    },
-                    language,
-                    language.defaultCompilerSpec,
-                    this,
-                    MessageLog(),
-                    monitor
-                )
-                if (program == null) {
-                    Msg.error(this, "Program " + file.name + " could not be imported")
-                } else {
-                    consoleService.println("Looking for maps in " + file.name)
-                    program.isTemporary = true
-                    runScript("find_maps.py", arrayOf(outputDir.absolutePath), program)
-                }
+            monitor.message = "Analyzing " + inputFile.name
+            val program = AutoImporter.importByUsingSpecificLoaderClassAndLcs(
+                inputFile,
+                null,
+                BinaryLoader::class.java,
+                object : LinkedList<Pair<String?, String?>?>() {
+                    init {
+                        add(Pair("-loader-baseAddr", "0x80000000"))
+                    }
+                },
+                language,
+                language.defaultCompilerSpec,
+                this,
+                MessageLog(),
+                monitor
+            )
+            if (program == null) {
+                Msg.error(this, "Program " + inputFile.name + " could not be imported")
+            } else {
+                consoleService.println("Looking for maps in " + inputFile.name)
+                program.isTemporary = true
+                runScript("find_maps.py", arrayOf(outputDir.absolutePath), program)
             }
         } catch (e: NotFoundException) {
             Msg.error(this, "Project open Exception: " + e.message, e)
@@ -188,7 +185,7 @@ class WinOLSAnalyzerGUI(
             .getScriptInstance(scriptFile, consoleService.stdOut)
         script.scriptArgs = args
         script.execute(
-            GhidraState(AppInfo.getFrontEndTool(), AppInfo.getActiveProject(), exampleProgram, null, null, null),
+            GhidraState(AppInfo.getFrontEndTool(), projectManager.activeProject, exampleProgram, null, null, null),
             monitor,
             consoleService.stdOut
         )
