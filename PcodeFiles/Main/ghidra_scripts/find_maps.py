@@ -44,9 +44,14 @@ def readSizeReuse(filepath):
     return sizeReuse
 
 def run():
+    project = state.getTool().getProject()
+    report = project.getSaveableData("analysis_report")
     start_of_data = utils.find_data_sector()
     if start_of_data is None:
         print("Could not find data sector")
+        bad_files = report.getStrings("badFiles", [])
+        bad_files.append(currentProgram.getName())
+        report.putStrings("badFiles", bad_files)
         return
     print("Data sector starts at {}".format(start_of_data))
     software_version = utils.get_softwarever(utils.get_scriptcode_addr(start_of_data))
@@ -143,8 +148,6 @@ def run():
         })
 
     print(json.JSONEncoder().encode(for_export))
-    project = state.getTool().getProject()
-    report = project.getSaveableData("analysis_report")
     if len(not_found_groups) < len(found_groups) / 2:
         ok_files = report.getStrings("okFiles", [])
         ok_files.append(currentProgram.getName())

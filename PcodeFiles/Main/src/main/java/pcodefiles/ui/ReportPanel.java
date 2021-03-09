@@ -98,7 +98,6 @@ public class ReportPanel extends JPanel {
         gbc.gridx = 0;
         gbc.gridy = y;
         gbc.insets.left = 10;
-        gbc.insets.top = 10;
         gbc.anchor = GridBagConstraints.WEST;
         gbl.setConstraints(badFilesLabel, gbc);
         this.add(badFilesLabel);

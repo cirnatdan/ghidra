@@ -15,7 +15,11 @@ import ghidra.util.task.TaskLauncher
 import java.io.File
 import javax.swing.ToolTipManager
 
-class MainHelper(private val toolTipManager: ToolTipManager, val tool: WinOLSTool, val frontEndPlugin: FrontEndPlugin) {
+class MainHelper(
+    private val toolTipManager: ToolTipManager,
+    private val tool: WinOLSTool,
+    private val frontEndPlugin: FrontEndPlugin
+) {
     fun run(args: Array<String>) {
         initializeTooltips()
         ExtensionUtils.cleanupUninstalledExtensions()
