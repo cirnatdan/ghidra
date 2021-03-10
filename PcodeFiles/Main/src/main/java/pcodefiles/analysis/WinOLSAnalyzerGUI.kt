@@ -69,10 +69,9 @@ class WinOLSAnalyzerGUI(
                 monitor
             )
             monitor.message = "Creating data structure labels"
-            runScript(project,"create_data_labels.py", arrayOf(), exampleProgram)
+            runScriptInstance(project, CreateDataLabelsScript(), exampleProgram)
             monitor.message = "Scanning for possible offsets"
-            val possibleOffsetsAnalyzer = PossibleOffsetsAnalyzerScript()
-            runScriptInstance(project, possibleOffsetsAnalyzer, exampleProgram)
+            runScriptInstance(project, PossibleOffsetsAnalyzerScript(), exampleProgram)
             if (exampleProgram.canSave()) exampleProgram.save("analyzed_possible_offsets", monitor)
         }
         val transactionId = exampleProgram.startTransaction("analysis")

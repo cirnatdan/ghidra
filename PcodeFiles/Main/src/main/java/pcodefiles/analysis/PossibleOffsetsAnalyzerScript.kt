@@ -1,7 +1,6 @@
 package pcodefiles.analysis
 
 import ghidra.app.script.GhidraScript
-import ghidra.program.model.listing.Program
 
 class PossibleOffsetsAnalyzerScript(
 ) : GhidraScript(), Utils {
@@ -41,7 +40,7 @@ class PossibleOffsetsAnalyzerScript(
         )
 
     override fun run() {
-        print("Looking for possible offsets instructions in $currentProgram")
+        println("Looking for possible offsets instructions in $currentProgram")
         val data_sector_addr = find_data_sector()
 
         for (p in a9_access_patterns) {
