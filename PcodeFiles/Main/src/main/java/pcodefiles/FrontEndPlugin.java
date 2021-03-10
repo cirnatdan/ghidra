@@ -115,10 +115,6 @@ public class FrontEndPlugin extends Plugin
 		return frontEndProvider;
 	}
 
-	WinOLSTool getFrontEndTool() {
-		return (WinOLSTool) tool;
-	}
-
 	public JComponent getComponent() {
 		return mainGuiPanel;
 	}

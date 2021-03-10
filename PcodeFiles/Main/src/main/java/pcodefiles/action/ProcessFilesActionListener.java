@@ -5,8 +5,8 @@ import ghidra.framework.model.ProjectManager;
 import ghidra.framework.options.SaveState;
 import ghidra.program.model.lang.LanguageService;
 import ghidra.util.task.TaskBuilder;
-import pcodefiles.AppInfo;
-import pcodefiles.WinOLSAnalyzerGUI;
+import pcodefiles.WinOLSProjectManager;
+import pcodefiles.analysis.WinOLSAnalyzerGUI;
 import pcodefiles.WinOLSPanel;
 import pcodefiles.WinOLSTool;
 import pcodefiles.model.Report;
@@ -24,8 +24,8 @@ import java.util.Objects;
 public class ProcessFilesActionListener implements ActionListener {
 
     private final WinOLSTool winOLSTool;
-    private ProjectManager projectManager;
-    private LanguageService languageService;
+    private final ProjectManager projectManager;
+    private final LanguageService languageService;
 
     public ProcessFilesActionListener(WinOLSTool winOLSTool,
                                       ProjectManager projectManager,
@@ -52,7 +52,6 @@ public class ProcessFilesActionListener implements ActionListener {
             WinOLSAnalyzerGUI analyzerGUI = null;
             try {
                 analyzerGUI = new WinOLSAnalyzerGUI(
-                        projectManager,
                         winOLSTool.getService(ConsoleService.class),
                         monitor,
                         reuseAnalysis,
@@ -64,10 +63,15 @@ public class ProcessFilesActionListener implements ActionListener {
                 monitor.cancel();
                 return;
             }
+            var winOLSPM = new WinOLSProjectManager(
+                    projectManager,
+                    winOLSTool.getService(ConsoleService.class),
+                    reuseAnalysis
+            );
             monitor.setIndeterminate(true);
 
             monitor.setMessage("Parse winolsscript file");
-            var project = analyzerGUI.openProject(winOLSScript);
+            var project = winOLSPM.openProject(winOLSScript);
             project.setSaveableData("analysis_report", new SaveState());
             var report = project.getSaveableData("analysis_report");
 

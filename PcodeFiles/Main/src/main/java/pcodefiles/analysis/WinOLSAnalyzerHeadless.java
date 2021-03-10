@@ -1,4 +1,4 @@
-package pcodefiles;
+package pcodefiles.analysis;
 
 import generic.jar.ResourceFile;
 import generic.stl.Pair;

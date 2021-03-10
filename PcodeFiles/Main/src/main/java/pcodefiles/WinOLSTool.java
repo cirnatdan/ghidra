@@ -26,8 +26,6 @@ import docking.util.AnimationUtils;
 import docking.util.image.ToolIconURL;
 import generic.util.WindowUtilities;
 import ghidra.app.plugin.core.console.ConsolePlugin;
-import ghidra.app.plugin.core.progmgr.ProgramManagerPlugin;
-import ghidra.app.plugin.core.script.GhidraScriptMgrPlugin;
 import ghidra.framework.LoggingInitialization;
 import ghidra.framework.OperatingSystem;
 import ghidra.framework.Platform;
