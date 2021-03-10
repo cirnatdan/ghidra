@@ -4,6 +4,7 @@ import generic.jar.ResourceFile
 import generic.stl.Pair
 import generic.util.Path
 import ghidra.app.plugin.core.analysis.AutoAnalysisManager
+import ghidra.app.script.GhidraScript
 import ghidra.app.script.GhidraScriptUtil
 import ghidra.app.script.GhidraState
 import ghidra.app.services.ConsoleService
@@ -70,7 +71,8 @@ class WinOLSAnalyzerGUI(
             monitor.message = "Creating data structure labels"
             runScript(project,"create_data_labels.py", arrayOf(), exampleProgram)
             monitor.message = "Scanning for possible offsets"
-            runScript(project,"analyze_possible_offsets.py", arrayOf(), exampleProgram)
+            val possibleOffsetsAnalyzer = PossibleOffsetsAnalyzerScript()
+            runScriptInstance(project, possibleOffsetsAnalyzer, exampleProgram)
             if (exampleProgram.canSave()) exampleProgram.save("analyzed_possible_offsets", monitor)
         }
         val transactionId = exampleProgram.startTransaction("analysis")
@@ -137,7 +139,16 @@ class WinOLSAnalyzerGUI(
         }
     }
 
-    private fun runScript(project: Project, scriptName: String, args: Array<String>, exampleProgram: Program) {
+    private fun runScriptInstance(project: Project, script: GhidraScript, program: Program) {
+        Msg.info(this, "Running script ${script.scriptName}")
+        script.execute(
+            GhidraState(AppInfo.getFrontEndTool(), project, program, null, null, null),
+            monitor,
+            consoleService.stdOut
+        )
+    }
+
+    private fun runScript(project: Project, scriptName: String, args: Array<String>, program: Program) {
         Msg.info(this, "Running script $scriptName")
         val scriptFile = ResourceFile(
             Path.fromPathString(Path.GHIDRA_HOME + "/../PcodeFiles/Main/ghidra_scripts/" + scriptName).getFile(false)
@@ -146,7 +157,7 @@ class WinOLSAnalyzerGUI(
             .getScriptInstance(scriptFile, consoleService.stdOut)
         script.scriptArgs = args
         script.execute(
-            GhidraState(AppInfo.getFrontEndTool(), project, exampleProgram, null, null, null),
+            GhidraState(AppInfo.getFrontEndTool(), project, program, null, null, null),
             monitor,
             consoleService.stdOut
         )
