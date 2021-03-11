@@ -22,7 +22,7 @@ interface Utils: GhidraFlatProgramAPI {
                     + "\\x3f" + ".{3}",
         )
 
-    val data_sector_patterns
+    val dataSectorPatterns
         get() = mapOf(
             "BMW" to "(\\x40|\\x44)(\\x1e\\x30\\x80)"
         )
@@ -47,15 +47,15 @@ interface Utils: GhidraFlatProgramAPI {
 
     fun findDataSector(): Address? {
         val endOfCode = findEndOfCode() ?: return null
-        var startOfData = findBytes(endOfCode, ".{2}\\x30\\xa0.{2}\\x30\\xa0")
+        val startOfData = findBytes(endOfCode, ".{2}\\x30\\xa0.{2}\\x30\\xa0")
         if (startOfData != null )
             return startOfData
 
-        startOfData = findBytes(endOfCode, ".{2}\\x30\\x80.{2}\\x30\\x80")
-        return findBytes(toAddr(0x80004000), data_sector_patterns["BMW"]!!)
+        return findBytes(toAddr(0x80004000), dataSectorPatterns["BMW"]!!)
+            ?: findBytes(endOfCode, ".{2}\\x30\\x80.{2}\\x30\\x80")
     }
 
-    fun extract_a9_offset(instruction: Instruction): Scalar {
+    fun extractA9Offset(instruction: Instruction): Scalar {
         val objects = instruction.getOpObjects(1)
         if (objects[0] is Register)
             return objects[1] as Scalar
@@ -64,34 +64,34 @@ interface Utils: GhidraFlatProgramAPI {
         throw Exception("Offset could not be extracted")
     }
 
-    fun get_scriptcode_addr(data_sector_addr: Address): Address? {
-        val script_code_func_addr = findBytes(toAddr(0x80004000), codePatterns["scriptcode"]!!)
-        if (script_code_func_addr != null) {
-            println("Script code function at: $script_code_func_addr")
-            disassemble(script_code_func_addr)
-            val instruction = getInstructionAt(script_code_func_addr)
-            print("Script code instruction $instruction")
+    fun getScriptcodeAddress(dataSectorAddress: Address): Address? {
+        val scriptCodeFuncAddress = findBytes(toAddr(0x80004000), codePatterns["scriptcode"]!!)
+        if (scriptCodeFuncAddress != null) {
+            println("Script code function at: $scriptCodeFuncAddress")
+            disassemble(scriptCodeFuncAddress)
+            val instruction = getInstructionAt(scriptCodeFuncAddress)
+            println("Script code instruction $instruction")
 
-            val scriptcode_offset: Scalar = extract_a9_offset(instruction)
-            print("Script code offset: {}".format(scriptcode_offset))
+            val scriptcodeOffset: Scalar = extractA9Offset(instruction)
+            println("Script code offset: $scriptcodeOffset")
 
-            val scriptcode_ptr_addr = data_sector_addr.add(scriptcode_offset.getValue())
-            print("Script code pointer at: {}".format(scriptcode_ptr_addr))
+            val scriptcodePtrAddress = dataSectorAddress.add(scriptcodeOffset.value)
+            println("Script code pointer at: $scriptcodePtrAddress")
 
-            removeDataAt(scriptcode_ptr_addr)
-            val scriptcode_addr = createData(scriptcode_ptr_addr, Pointer32DataType())
-            print("Script code addr: {}".format(scriptcode_addr))
+            removeDataAt(scriptcodePtrAddress)
+            val scriptcodeAddress = createData(scriptcodePtrAddress, Pointer32DataType())
+            println("Script code address: $scriptcodeAddress")
 
-            return scriptcode_addr.value as Address
+            return scriptcodeAddress.value as Address
         } else {
-            var addr = data_sector_addr
+            var address = dataSectorAddress
             while (true) {
-                var ptr = getDataAt(addr)
+                var ptr = getDataAt(address)
                 if (ptr !is Pointer32DataType) {
-                    removeDataAt(addr)
+                    removeDataAt(address)
                 }
                 if (ptr == null)
-                    ptr = createData(addr, Pointer32DataType())
+                    ptr = createData(address, Pointer32DataType())
 
                 if (ptr.value is Address && (ptr.value as Address).offset > 0x90000000)
                     return null
@@ -100,35 +100,35 @@ interface Utils: GhidraFlatProgramAPI {
                     it.and(0xff.toByte())
                 }
 
-                if (bytez.subList(0, 3).equals(listOf(0x4f, 0x5f, 0x37))){
+                if (bytez.subList(0, 3) == listOf(0x4f, 0x5f, 0x37)){
                     return ptr.value as Address?
                 }
 
-                addr = addr.add(4)
+                address = address.add(4)
             }
         }
     }
 
-    fun get_softwarever(softwareverAddr: Address): String {
-        if (getDataAt(softwareverAddr) != null)
-            removeDataAt(softwareverAddr)
-        return createAsciiString(softwareverAddr).value as String
+    fun getSoftwareVersion(softwareVersionAddress: Address): String {
+        if (getDataAt(softwareVersionAddress) != null)
+            removeDataAt(softwareVersionAddress)
+        return createAsciiString(softwareVersionAddress).value as String
     }
 
-    fun convert_scriptcode(scriptcode_raw: String): String {
+    fun convertScriptcode(scriptcode_raw: String): String {
         val parts = scriptcode_raw.split("-")
         return "V" + parts[0].substring(3)
     }
 
-    fun compute_map_size(data_sector_addr: Address, offset: Long, data_type_size: Int): Long {
-        val dataPtr = data_sector_addr.add(offset)
-        var dataAddr = getDataAt(dataPtr)
-        if (dataAddr == null)
-            dataAddr = createData(dataPtr, Pointer32DataType())
-        var nextDataPtrAddr = data_sector_addr.add(offset + 4)
-        var nextDataPtr = getDataAt(nextDataPtrAddr)
+    fun computeMapSize(dataSectorAddress: Address, offset: Long, data_type_size: Int): Long {
+        val dataPtr = dataSectorAddress.add(offset)
+        var dataAddress = getDataAt(dataPtr)
+        if (dataAddress == null)
+            dataAddress = createData(dataPtr, Pointer32DataType())
+        val nextDataPtrAddress = dataSectorAddress.add(offset + 4)
+        var nextDataPtr = getDataAt(nextDataPtrAddress)
         if (nextDataPtr == null)
-            nextDataPtr = createData(nextDataPtrAddr, Pointer32DataType())
-        return (nextDataPtr.value as Address).subtract(dataAddr.value as Address) / data_type_size
+            nextDataPtr = createData(nextDataPtrAddress, Pointer32DataType())
+        return (nextDataPtr.value as Address).subtract(dataAddress.value as Address) / data_type_size
     }
 }

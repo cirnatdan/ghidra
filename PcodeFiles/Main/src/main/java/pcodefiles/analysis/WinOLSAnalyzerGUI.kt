@@ -111,8 +111,7 @@ class WinOLSAnalyzerGUI(
             } else {
                 consoleService.println("Looking for maps in " + inputFile.name)
                 program.isTemporary = true
-                runScript(project,"find_maps.py", arrayOf(outputDir.absolutePath), program)
-                //runScriptInstance(project, FindMapsScript(project.getSaveableData("analysis_report")), program, arrayOf(outputDir.absolutePath))
+                runScriptInstance(project, FindMapsScript(project.getSaveableData("analysis_report")), program, arrayOf(outputDir.absolutePath))
             }
         } catch (e: NotFoundException) {
             Msg.error(this, "Project open Exception: " + e.message, e)

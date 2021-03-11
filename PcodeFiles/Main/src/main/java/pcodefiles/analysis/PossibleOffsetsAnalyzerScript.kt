@@ -2,8 +2,7 @@ package pcodefiles.analysis
 
 import ghidra.app.script.GhidraScript
 
-class PossibleOffsetsAnalyzerScript(
-) : GhidraScript(), Utils {
+class PossibleOffsetsAnalyzerScript : GhidraScript(), Utils {
 
     private val a9AccessPatterns
         get() = arrayOf(
@@ -41,15 +40,15 @@ class PossibleOffsetsAnalyzerScript(
 
     override fun run() {
         println("Looking for possible offsets instructions in $currentProgram")
-        val dataSectorAddr = findDataSector()
+        val dataSectorAddress = findDataSector()
 
         for (p in a9AccessPatterns) {
-            var addr = findBytes(toAddr(0x80004000), p)
-            while (addr != null) {
-                if (addr > dataSectorAddr)
+            var address = findBytes(toAddr(0x80004000), p)
+            while (address != null) {
+                if (address > dataSectorAddress)
                     break
-                disassemble(addr)
-                addr = findBytes(addr.add(1), p)
+                disassemble(address)
+                address = findBytes(address.add(1), p)
             }
         }
     }
