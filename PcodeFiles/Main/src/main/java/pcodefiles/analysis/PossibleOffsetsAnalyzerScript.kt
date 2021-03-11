@@ -5,7 +5,7 @@ import ghidra.app.script.GhidraScript
 class PossibleOffsetsAnalyzerScript(
 ) : GhidraScript(), Utils {
 
-    val a9_access_patterns
+    private val a9AccessPatterns
         get() = arrayOf(
             "\\x99\\x91",
             "\\x99\\x92",
@@ -41,17 +41,16 @@ class PossibleOffsetsAnalyzerScript(
 
     override fun run() {
         println("Looking for possible offsets instructions in $currentProgram")
-        val data_sector_addr = find_data_sector()
+        val dataSectorAddr = findDataSector()
 
-        for (p in a9_access_patterns) {
+        for (p in a9AccessPatterns) {
             var addr = findBytes(toAddr(0x80004000), p)
             while (addr != null) {
-                if (addr > data_sector_addr)
+                if (addr > dataSectorAddr)
                     break
                 disassemble(addr)
                 addr = findBytes(addr.add(1), p)
             }
         }
     }
-
 }

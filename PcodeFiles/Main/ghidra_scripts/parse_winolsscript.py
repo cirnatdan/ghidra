@@ -6,9 +6,11 @@ from winols_parser import Lark_StandAlone, Token, Tree
 from Queue import Queue
 
 import __main__ as ghidra_app
-import utils
 from pcodefiles.model import Group, GroupType
+from pcodefiles.analysis import UtilsHelper
 from group import GroupContainer
+
+utils_helper = UtilsHelper(getCurrentProgram(), monitor)
 
 this = sys.modules[__name__]
 
@@ -175,7 +177,7 @@ def main():
     for i in this.not_found_maps:
         print("{} {}, closest: {} {}".format(i[0].getId(), hex(i[1].getOffset()), i[2], i[2].getAddress() if i[2] else None))
 
-    data_sector_addr = utils.find_data_sector()
+    data_sector_addr = utils_helper.findDataSector()
     print("Data sector starts at: {}".format(data_sector_addr))
 
     listing = getCurrentProgram().getListing()
@@ -229,5 +231,5 @@ def main():
 
 
 if __name__ == "__main__":
-    print("version2")
+    print("version_with_helper")
     main()

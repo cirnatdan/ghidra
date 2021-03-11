@@ -112,6 +112,7 @@ class WinOLSAnalyzerGUI(
                 consoleService.println("Looking for maps in " + inputFile.name)
                 program.isTemporary = true
                 runScript(project,"find_maps.py", arrayOf(outputDir.absolutePath), program)
+                //runScriptInstance(project, FindMapsScript(project.getSaveableData("analysis_report")), program, arrayOf(outputDir.absolutePath))
             }
         } catch (e: NotFoundException) {
             Msg.error(this, "Project open Exception: " + e.message, e)
@@ -138,8 +139,9 @@ class WinOLSAnalyzerGUI(
         }
     }
 
-    private fun runScriptInstance(project: Project, script: GhidraScript, program: Program) {
+    private fun runScriptInstance(project: Project, script: GhidraScript, program: Program, args: Array<String> = arrayOf()) {
         Msg.info(this, "Running script ${script.scriptName}")
+        script.scriptArgs = args
         script.execute(
             GhidraState(AppInfo.getFrontEndTool(), project, program, null, null, null),
             monitor,

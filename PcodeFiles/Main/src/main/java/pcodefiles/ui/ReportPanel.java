@@ -49,13 +49,13 @@ public class ReportPanel extends JPanel {
         gbl.setConstraints(badFilesLabel, gbc);
         this.add(badFilesLabel);
 
-//        gbc = new GridBagConstraints();
-//        gbc.gridx = 2;
-//        gbc.gridy = y;
-//        gbc.insets.left = 10;
-//        gbc.anchor = GridBagConstraints.WEST;
-//        gbl.setConstraints(okPercentageLabel, gbc);
-//        this.add(okPercentageLabel);
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = y;
+        gbc.insets.left = 10;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbl.setConstraints(okPercentageLabel, gbc);
+        this.add(okPercentageLabel);
 
         y++;
         gbc = new GridBagConstraints();
@@ -75,13 +75,13 @@ public class ReportPanel extends JPanel {
         gbl.setConstraints(badFilesNr, gbc);
         this.add(badFilesNr);
 
-//        gbc = new GridBagConstraints();
-//        gbc.gridx = 2;
-//        gbc.gridy = y;
-//        gbc.insets.left = 10;
-//        gbc.anchor = GridBagConstraints.WEST;
-//        gbl.setConstraints(okPercentage, gbc);
-//        this.add(okPercentage);
+        gbc = new GridBagConstraints();
+        gbc.gridx = 2;
+        gbc.gridy = y;
+        gbc.insets.left = 10;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbl.setConstraints(okPercentage, gbc);
+        this.add(okPercentage);
 
         // list
 

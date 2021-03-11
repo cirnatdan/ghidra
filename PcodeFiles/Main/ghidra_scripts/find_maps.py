@@ -14,7 +14,9 @@ import utils
 from ghidra.program.model.data import Pointer32DataType
 
 from pcodefiles.model import Group
+from pcodefiles.analysis import UtilsHelper
 
+utils_helper = UtilsHelper(getCurrentProgram(), monitor)
 
 def findPattern(pattern):
     matches = findBytes(toAddr(0x80004000), pattern, 2)
@@ -46,7 +48,7 @@ def readSizeReuse(filepath):
 def run():
     project = state.getTool().getProject()
     report = project.getSaveableData("analysis_report")
-    start_of_data = utils.find_data_sector()
+    start_of_data = utils_helper.findDataSector()
     if start_of_data is None:
         print("Could not find data sector")
         bad_files = report.getStrings("badFiles", [])
@@ -54,8 +56,8 @@ def run():
         report.putStrings("badFiles", bad_files)
         return
     print("Data sector starts at {}".format(start_of_data))
-    software_version = utils.get_softwarever(utils.get_scriptcode_addr(start_of_data))
-    scriptcode = utils.convert_scriptcode(software_version)
+    software_version = utils_helper.get_softwarever(utils_helper.get_scriptcode_addr(start_of_data))
+    scriptcode = utils_helper.convert_scriptcode(software_version)
     print("Scriptcode: {}".format(scriptcode))
     listing = currentProgram.getListing()
     for_export = {
@@ -113,7 +115,7 @@ def run():
                 if data_addr is None:
                     data_addr = createData(data_ptr, Pointer32DataType())
                 probable_address[offset] = data_addr.getValue()
-                size = utils.compute_map_size(start_of_data, offset, group.getDataTypeSize())
+                size = utils_helper.compute_map_size(start_of_data, offset, group.getDataTypeSize())
                 print("Found probable {} at {} with size {}".format(group.getName(), data_addr, size))
                 print(offset, initial_offset, closest_offset)
                 if abs(offset - initial_offset) < abs(closest_offset - initial_offset):
