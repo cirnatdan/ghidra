@@ -23,7 +23,7 @@ class CreateDataLabelsScript(): GhidraScript(), Utils {
 
             if ((value.offset in 0x81000001..0x9fffffff) || value.offset > 0xa1000000)
                 break
-            createLabel(value, "DAT_{}".format(value.toString()), true)
+            createLabel(value, "DAT_%s".format(value.toString()), true)
             pointerAddr = pointerAddr.add(4) //next
         }
     }
