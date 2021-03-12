@@ -85,6 +85,7 @@ class WinOLSAnalyzerGUI(
         if (exampleProgram.canSave()) exampleProgram.save("analysis", monitor)
         monitor.message = "Parsing winolsskript"
         runScript(project, "parse_winolsscript.py", arrayOf(winOLSScript.absolutePath, outputDir.absolutePath), exampleProgram)
+        runScriptInstance(project, MatchMapsScript(project.getSaveableData("winOLSParseResult"), outputDir), exampleProgram )
         return exampleProgram
     }
 

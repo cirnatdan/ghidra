@@ -30,7 +30,7 @@ class FindMapsScript(
         println("Scriptcode: $scriptcode")
         val listing = currentProgram.listing
 
-        val mapsForExport = mutableListOf<Map<String,Any>>()
+        val mapsForExport = mutableListOf<Map<String,Any?>>()
 
         val foundGroups = hashMapOf<String,Group>()
         val notFoundGroups = arrayListOf<String>()
@@ -104,7 +104,7 @@ class FindMapsScript(
             group.setSizes(1, computeMapSize(startOfData, closestOffset!!, group.dataTypeSize).toInt())
             group.address = probableAddress[closestOffset]
             if (suboffset > 0) {
-                group.address = group.address.add(suboffset.toLong())
+                group.address = group.address!!.add(suboffset.toLong())
             }
             foundGroups[group.id] = group
         }
@@ -114,7 +114,7 @@ class FindMapsScript(
         if (sizeReuseRule["from"] in foundGroups && sizeReuseRule["to"] in foundGroups) {
             val fromGroup = foundGroups[sizeReuseRule["from"]]
             val toGroup = foundGroups[sizeReuseRule["to"]]
-            sizeToReuse = abs(fromGroup!!.address.offset - toGroup!!.address.offset) / fromGroup.dataTypeSize
+            sizeToReuse = abs(fromGroup!!.address!!.offset - toGroup!!.address!!.offset) / fromGroup.dataTypeSize
         } else {
             println("Groups for size reuse not found: ${sizeReuseRule["from"]} ${sizeReuseRule["to"]}")
             sizeReuseRule["folder"] = ""
@@ -131,7 +131,7 @@ class FindMapsScript(
                 "name" to group.name,
                 "key" to  group.id,
                 "sizes" to group.sizes,
-                "address" to "0x" + Integer.toHexString((group.address.offset-0x80000000).toInt())
+                "address" to "0x" + Integer.toHexString((group.address!!.offset-0x80000000).toInt())
             ))
         }
 
@@ -146,7 +146,7 @@ class FindMapsScript(
 
         report.putStrings(currentProgram.name, notFoundGroups.toTypedArray())
         report.putString("${currentProgram.name}_scriptcode", scriptcode)
-        if (notFoundGroups.size < foundGroups.size / 2) {
+        if (notFoundGroups.size < (foundGroups.size + notFoundGroups.size) / 2) {
             val okFiles = report.getStrings("okFiles", arrayOf()).toMutableList()
             okFiles.add(currentProgram.name)
             report.putStrings("okFiles", okFiles.toTypedArray())

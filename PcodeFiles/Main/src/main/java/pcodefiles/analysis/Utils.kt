@@ -1,9 +1,12 @@
 package pcodefiles.analysis
 
+import ghidra.app.plugin.core.searchmem.HexSearchFormat
 import ghidra.program.model.address.Address
 import ghidra.program.model.data.Pointer32DataType
 import ghidra.program.model.lang.Register
+import ghidra.program.model.listing.CodeUnitIterator
 import ghidra.program.model.listing.Instruction
+import ghidra.program.model.listing.InstructionIterator
 import ghidra.program.model.scalar.Scalar
 import kotlin.experimental.and
 
@@ -130,5 +133,78 @@ interface Utils: GhidraFlatProgramAPI {
         if (nextDataPtr == null)
             nextDataPtr = createData(nextDataPtrAddress, Pointer32DataType())
         return (nextDataPtr.value as Address).subtract(dataAddress.value as Address) / data_type_size
+    }
+
+    fun getInstructionsPattern(code_units: CodeUnitIterator): String {
+        var pattern = ""
+        var count = 0
+        for (cu in code_units) {
+            count += 1
+            if (count > 5)
+                return pattern
+            val bytes = cu.bytes
+            pattern += "\\x%02x.{%d}".format(cu.getUnsignedByte(0), bytes.size - 1)
+        }
+        return ""
+    }
+
+    fun findOffsetInCode(instructions: InstructionIterator, offset: Long): Address? {
+        for (i in instructions) {
+            val input = i.inputObjects
+            if (input.size != 2)
+                continue
+            if (input[1] !is Register)
+                input.reverse()
+            if (input[1] is Register
+                && (input[1] as Register).name == "a9"
+                && (input[0] as Scalar).value == offset) {
+                println("Found offset %x at 0x%x: %s".format(offset, i.address.offset, i))
+                return i.address
+            }
+        }
+        return null
+    }
+
+    fun hexStringToLittleEndianPattern(input: String): String {
+        val searchFormat = HexSearchFormat {}
+        val searchData = searchFormat.getSearchData(input)
+        return searchData.bytes.joinToString(separator = "", transform = {
+            "\\x%02x".format(it)
+        })
+    }
+
+    fun getMapOffset(dataSectorAddress: Address, mapAddress: Address): Long {
+        val mapAddressSearch = hexStringToLittleEndianPattern(mapAddress.toString())
+        val ptrAddress = findBytes(dataSectorAddress, mapAddressSearch)
+        if (ptrAddress == null) {
+            throw Exception("Can't find map pointer for %s".format(mapAddress))
+        }
+        return ptrAddress.subtract(dataSectorAddress)
+    }
+
+    fun hasSuboffsetInCode(instructions: InstructionIterator, suboffset: Long): Boolean {
+        val result = instructions.next().resultObjects
+        // print(result)
+        val suboffsetRegister = (result[0] as Register).name
+        // print(suboffset_register)
+
+        var i = 0
+        while (true) {
+            if (i > 5)
+                return false
+            val instr = instructions.next()
+            val input = instr.inputObjects
+            if (input.size != 2)
+                continue
+            if (input[1] !is Register)
+                input.reverse()
+            if (input[1] is Register
+                && (input[1] as Register).name == suboffsetRegister
+                && (input[0] as Scalar).value == suboffset) {
+                print("Found suboffset 0x%x at 0x%x: %s".format(suboffset, instr.address, instr))
+                return true
+            }
+            i += 1
+        }
     }
 }
