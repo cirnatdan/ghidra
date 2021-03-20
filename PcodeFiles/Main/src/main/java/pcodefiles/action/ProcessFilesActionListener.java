@@ -1,5 +1,7 @@
 package pcodefiles.action;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import ghidra.app.services.ConsoleService;
 import ghidra.framework.model.ProjectManager;
 import ghidra.framework.options.SaveState;
@@ -7,7 +9,9 @@ import ghidra.program.model.lang.LanguageService;
 import ghidra.util.task.TaskBuilder;
 import pcodefiles.WinOLSProjectManager;
 import pcodefiles.analysis.WinOLSAnalyzerGUI;
-import pcodefiles.WinOLSPanel;
+import pcodefiles.model.Group;
+import pcodefiles.ui.PatternsWindow;
+import pcodefiles.ui.WinOLSPanel;
 import pcodefiles.WinOLSTool;
 import pcodefiles.model.Report;
 import pcodefiles.ui.ReportDialog;
@@ -18,8 +22,7 @@ import java.awt.event.ActionListener;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 public class ProcessFilesActionListener implements ActionListener {
 
@@ -42,14 +45,14 @@ public class ProcessFilesActionListener implements ActionListener {
 
         File winOLSScript = parent.getSelectedFiles(WinOLSPanel.WINOLSSCRIPT).get(0);
         List<File> exampleFile = parent.getSelectedFiles(WinOLSPanel.EXAMPLEFILE);
-        List<File> inputFiles = parent.getSelectedFiles(WinOLSPanel.INPUTFILES);
-        File outputDir = parent.getSelectedFiles(WinOLSPanel.OUTPUTDIR).get(0);
+        List<File> inputFiles = button.getName().equals("patterns") ? null : parent.getSelectedFiles(WinOLSPanel.INPUTFILES);
+        File outputDir = button.getName().equals("patterns") ? null : parent.getSelectedFiles(WinOLSPanel.OUTPUTDIR).get(0);
         boolean reuseAnalysis = parent.reuseAnalysis();
 
         //@formatter:off
         TaskBuilder.withRunnable(monitor -> {
             monitor.setMaximum(1);
-            WinOLSAnalyzerGUI analyzerGUI = null;
+            WinOLSAnalyzerGUI analyzerGUI;
             try {
                 analyzerGUI = new WinOLSAnalyzerGUI(
                         winOLSTool.getService(ConsoleService.class),
@@ -72,11 +75,31 @@ public class ProcessFilesActionListener implements ActionListener {
 
             monitor.setMessage("Parse winolsscript file");
             var project = winOLSPM.openProject(winOLSScript);
+            assert project != null;
             project.setSaveableData("analysis_report", new SaveState());
             var report = project.getSaveableData("analysis_report");
 
             try {
                 analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
+                if (button.getName().equals("patterns")) {
+                    var parseResult = project.getSaveableData("winOLSParseResult");
+                    var patterns = new HashMap<String,List<String>>();
+
+                    var gson = new Gson();
+                    var groups = gson.fromJson(
+                            parseResult.getString("winOLS_groups", "[]"),
+                            new TypeToken<List<Map<String,Object>>>(){}.getType()
+                    );
+                    for (Map<String,Object> g: (List<Map<String,Object>>)groups) {
+                        var group = Group.fromMap(g);
+                        patterns.put(group.getId() + " " + group.getName(),
+                                Arrays.asList(parseResult.getStrings(group.getId() + "_patterns", new String[0])));
+                    }
+
+                    new PatternsWindow(patterns);
+
+                    return;
+                }
                 for (File file: inputFiles) {
                     analyzerGUI.runAnalysis(project, file, outputDir);
                     var scriptcode = report.getString(file.getName() + "_scriptcode", "");
@@ -107,14 +130,15 @@ public class ProcessFilesActionListener implements ActionListener {
     }
 
     private void saveReport(File outputDir, Report report) {
-        OutputStream os = null;
+        OutputStream os;
         try {
             os = new FileOutputStream(new File(outputDir, "analysis_report.txt"));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            return;
         }
         String encoding = "UTF8";
-        OutputStreamWriter osw = null;
+        OutputStreamWriter osw;
         try {
             osw = new OutputStreamWriter(os, encoding);
         } catch (UnsupportedEncodingException e) {

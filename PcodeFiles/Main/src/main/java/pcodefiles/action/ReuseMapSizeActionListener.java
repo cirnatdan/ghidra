@@ -1,6 +1,6 @@
 package pcodefiles.action;
 
-import pcodefiles.WinOLSPanel;
+import pcodefiles.ui.WinOLSPanel;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

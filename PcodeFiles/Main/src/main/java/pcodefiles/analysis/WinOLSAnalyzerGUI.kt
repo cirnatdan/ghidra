@@ -43,7 +43,7 @@ class WinOLSAnalyzerGUI(
         project: Project,
         winOLSScript: File,
         exampleFile: List<File>,
-        outputDir: File
+        outputDir: File?
     ): Program {
         consoleService.println("Start analysis for " + winOLSScript.absolutePath)
         val exampleProgram: Program
@@ -84,7 +84,8 @@ class WinOLSAnalyzerGUI(
         exampleProgram.endTransaction(transactionId, true)
         if (exampleProgram.canSave()) exampleProgram.save("analysis", monitor)
         monitor.message = "Parsing winolsskript"
-        runScript(project, "parse_winolsscript.py", arrayOf(winOLSScript.absolutePath, outputDir.absolutePath), exampleProgram)
+        runScript(project, "parse_winolsscript.py", arrayOf(winOLSScript.absolutePath), exampleProgram)
+        monitor.message = "Matching maps in the example file"
         runScriptInstance(project, MatchMapsScript(project.getSaveableData("winOLSParseResult"), outputDir), exampleProgram )
         return exampleProgram
     }

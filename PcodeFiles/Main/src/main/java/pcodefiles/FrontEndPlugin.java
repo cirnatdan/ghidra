@@ -15,10 +15,8 @@
  */
 package pcodefiles;
 
-import docking.ActionContext;
 import docking.ComponentProvider;
 import docking.WindowPosition;
-import docking.action.DockingAction;
 import docking.tool.ToolConstants;
 import docking.widgets.OptionDialog;
 import docking.widgets.filechooser.GhidraFileChooser;
@@ -41,11 +39,11 @@ import ghidra.util.NamingUtilities;
 import ghidra.util.SystemUtilities;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
+import pcodefiles.ui.WinOLSPanel;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.net.URL;
 import java.util.Collections;
 import java.util.Set;
 

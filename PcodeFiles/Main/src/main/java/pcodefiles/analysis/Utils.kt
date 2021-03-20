@@ -148,6 +148,22 @@ interface Utils: GhidraFlatProgramAPI {
         return ""
     }
 
+    fun getInstructionsPatternForIDAPro(code_units: CodeUnitIterator): List<String> {
+        var pattern = mutableListOf<String>()
+        var count = 0
+        for (cu in code_units) {
+            count += 1
+            if (count > 5)
+                return pattern
+            val bytes = cu.bytes
+            pattern.add("%02x".format(cu.getUnsignedByte(0)))
+            repeat(bytes.size - 1) {
+                pattern.add("??")
+            }
+        }
+        return pattern
+    }
+
     fun findOffsetInCode(instructions: InstructionIterator, offset: Long): Address? {
         for (i in instructions) {
             val input = i.inputObjects

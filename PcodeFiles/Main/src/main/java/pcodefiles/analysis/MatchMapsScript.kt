@@ -12,7 +12,7 @@ import java.io.File
 
 class MatchMapsScript(
     private val winOLSParseResult: SaveState,
-    private val outputDir: File
+    private val outputDir: File?
 ): GhidraScript(), Utils {
     override fun run() {
         val gson = Gson()
@@ -46,62 +46,82 @@ class MatchMapsScript(
         val dataSectorAddress = findDataSector()!!
         print("Data sector starts at: %s".format(dataSectorAddress))
 
-        File(outputDir, "code.patterns").printWriter().use { out ->
-            foundMaps.forEach {
-                val group = it.first
-                val address = it.second
+        val lines = mutableListOf<String>()
+        foundMaps.forEach {
+            val group = it.first
+            val address = it.second
 
-                val mapOffset = getMapOffset(dataSectorAddress, address)
-                println("%s offset: 0x%x".format(group.id, mapOffset))
-                val line = mutableListOf(
-                    group.id,
-                    group.name,
-                    group.groupType!!.value.toString(),
-                    group.dataOrg.toString(),
-                    mapOffset.toString(),
-                    group.folderName,
-                    (-1).toString(),  // no suboffset
-                )
-                var codeAddress = findOffsetInCode(listing.getInstructions(toAddr(0x80004000), true), mapOffset)
-                while (codeAddress != null) {
-                    line.add(getInstructionsPattern(listing.getCodeUnits(codeAddress, true)))
-                    codeAddress = findOffsetInCode(listing.getInstructions(codeAddress.add(16), true), mapOffset)
-                }
-                out.println(line.joinToString("::"))
+            val mapOffset = getMapOffset(dataSectorAddress, address)
+            println("%s offset: 0x%x".format(group.id, mapOffset))
+            val line = mutableListOf(
+                group.id,
+                group.name,
+                group.groupType!!.value.toString(),
+                group.dataOrg.toString(),
+                mapOffset.toString(),
+                group.folderName,
+                (-1).toString(),  // no suboffset
+            )
+
+            val patterns = mutableListOf<List<String>>()
+            var codeAddress = findOffsetInCode(listing.getInstructions(toAddr(0x80004000), true), mapOffset)
+            while (codeAddress != null) {
+                line.add(getInstructionsPattern(listing.getCodeUnits(codeAddress, true)))
+                patterns.add(getInstructionsPatternForIDAPro(listing.getCodeUnits(codeAddress, true)))
+                codeAddress = findOffsetInCode(listing.getInstructions(codeAddress.add(16), true), mapOffset)
             }
+            lines.add(line.joinToString("::"))
+            winOLSParseResult.putStrings(
+                group.id + "_patterns",
+                patterns.map { p -> p.joinToString(" ") }.toTypedArray()
+            )
+        }
 
-            notFoundMaps.forEach {
-                val group = it.first
-                val headAddress = it.second
-                val address = it.third!!.address
+        notFoundMaps.forEach {
+            val group = it.first
+            val headAddress = it.second
+            val address = it.third!!.address
 
-                val mapOffset = getMapOffset(dataSectorAddress, address)
-                println("%s offset: 0x%x".format(group.id, mapOffset))
-                val mapSubOffset = headAddress.subtract(address)
-                println("%s suboffset: 0x%x".format(group.id, mapSubOffset))
-                val line = mutableListOf(
-                    group.id,
-                    group.name,
-                    group.groupType!!.value.toString(),
-                    group.dataOrg.toString(),
-                    mapOffset.toString(),
-                    group.folderName,
-                    mapSubOffset.toString(),  // no suboffset
-                )
+            val mapOffset = getMapOffset(dataSectorAddress, address)
+            println("%s offset: 0x%x".format(group.id, mapOffset))
+            val mapSubOffset = headAddress.subtract(address)
+            println("%s suboffset: 0x%x".format(group.id, mapSubOffset))
+            val line = mutableListOf(
+                group.id,
+                group.name,
+                group.groupType!!.value.toString(),
+                group.dataOrg.toString(),
+                mapOffset.toString(),
+                group.folderName,
+                mapSubOffset.toString(),  // no suboffset
+            )
 
-                var codeAddress = findOffsetInCode(listing.getInstructions(toAddr(0x80004000), true), mapOffset)
-                while (codeAddress != null) {
-                    val foundSuboffset = hasSuboffsetInCode(listing.getInstructions(codeAddress, true), mapSubOffset)
-                    if (foundSuboffset) {
-                        line.add(getInstructionsPattern(listing.getCodeUnits(codeAddress, true)))
-                        break
-                    }
-                    codeAddress = findOffsetInCode(listing.getInstructions(codeAddress!!.add(16), true), mapOffset)
+            val patterns = mutableListOf<List<String>>()
+            var codeAddress = findOffsetInCode(listing.getInstructions(toAddr(0x80004000), true), mapOffset)
+            while (codeAddress != null) {
+                val foundSuboffset = hasSuboffsetInCode(listing.getInstructions(codeAddress, true), mapSubOffset)
+                if (foundSuboffset) {
+                    line.add(getInstructionsPattern(listing.getCodeUnits(codeAddress, true)))
+                    patterns.add(getInstructionsPatternForIDAPro(listing.getCodeUnits(codeAddress, true)))
+                    break
                 }
-                if (line.size > 7)
-                    out.println(line.joinToString("::"))
+                codeAddress = findOffsetInCode(listing.getInstructions(codeAddress!!.add(16), true), mapOffset)
+            }
+            if (line.size > 7) {
+                winOLSParseResult.putStrings(
+                    group.id + "_patterns",
+                    patterns.map { p -> p.joinToString(" ") }.toTypedArray()
+                )
+                lines.add(line.joinToString("::"))
             }
         }
+
+        if (outputDir != null)
+            File(outputDir, "code.patterns").printWriter().use { out ->
+                lines.forEach {
+                    out.println(it)
+                }
+            }
     }
 
     private fun matchMap(

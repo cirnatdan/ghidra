@@ -1,4 +1,4 @@
-package pcodefiles;
+package pcodefiles.ui;
 
 import docking.options.editor.ButtonPanelFactory;
 import docking.widgets.filechooser.GhidraFileChooser;
@@ -9,6 +9,7 @@ import ghidra.framework.preferences.Preferences;
 import ghidra.util.filechooser.GhidraFileChooserModel;
 import ghidra.util.filechooser.GhidraFileFilter;
 import org.apache.commons.io.FilenameUtils;
+import pcodefiles.WinOLSPreferences;
 import pcodefiles.action.ProcessFilesActionListener;
 import pcodefiles.action.ReuseMapSizeActionListener;
 
@@ -105,6 +106,10 @@ public class WinOLSPanel extends JPanel {
                 reuseAnalysis = false;
             }
         });
+
+        JButton patternsButton = ButtonPanelFactory.createButton("IDAPro patterns");
+        patternsButton.setName("patterns");
+        patternsButton.addActionListener(processFilesActionListener);
 
         JLabel inputFilesLabel = new GDLabel("Input files :", SwingConstants.RIGHT);
         JTextField inputFilesField =  new JTextField(25);
@@ -241,6 +246,14 @@ public class WinOLSPanel extends JPanel {
         gbc.anchor = GridBagConstraints.EAST;
         gbl.setConstraints(reuseAnalysisCheckbox, gbc);
         this.add(reuseAnalysisCheckbox);
+
+        gbc = new GridBagConstraints();
+        gbc.gridx = 1;
+        gbc.gridy = ++y;
+        gbc.insets.left = 10;
+        gbc.anchor = GridBagConstraints.EAST;
+        gbl.setConstraints(patternsButton, gbc);
+        this.add(patternsButton);
 
         gbc = new GridBagConstraints();
         gbc.gridx = 0;

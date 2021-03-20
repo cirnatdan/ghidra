@@ -10,6 +10,7 @@ import ghidra.program.model.lang.LanguageService
 import ghidra.program.util.DefaultLanguageService
 import ghidra.util.SystemUtilities
 import pcodefiles.action.ProcessFilesActionListener
+import pcodefiles.ui.WinOLSPanel
 import javax.swing.ToolTipManager
 
 class Injector {
