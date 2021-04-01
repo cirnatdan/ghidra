@@ -15,6 +15,12 @@
 SCRIPT_FILE="$(readlink -f "$0" 2>/dev/null || readlink "$0" 2>/dev/null || echo "$0")"
 SCRIPT_DIR="${SCRIPT_FILE%/*}"
 
+if [ "$#" -ge 1 ]; then
+  MODE=fg
+else
+  MODE=bg
+fi
+
 # Launch Ghidra in debug mode
 # DEBUG_ADDRESS set via environment for launch.sh
-DEBUG_ADDRESS=${DEBUG_ADDRESS} "${SCRIPT_DIR}"/support/launch.sh bg PcodeFiles "${MAXMEM}" "" pcodefiles.PcodeFilesRun "$@"
+DEBUG_ADDRESS=${DEBUG_ADDRESS} "${SCRIPT_DIR}"/support/launch.sh "${MODE}" PcodeFiles "${MAXMEM}" "" pcodefiles.PcodeFilesRun "$@"

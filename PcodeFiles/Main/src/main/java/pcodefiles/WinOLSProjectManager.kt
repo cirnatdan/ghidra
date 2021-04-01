@@ -18,7 +18,7 @@ class WinOLSProjectManager (
     private val reuseAnalysis: Boolean,
 ) {
     fun openProject(winOLSScript: File): Project? {
-        consoleService.println("Opening project " + winOLSScript.absolutePath)
+        println("Opening project " + winOLSScript.absolutePath)
         val projectLocator = ProjectLocator(GenericRunInfo.getProjectsDirPath(), winOLSScript.name)
         if (projectManager.getActiveProject() != null) {
             projectManager.activeProject.close()
@@ -50,7 +50,6 @@ class WinOLSProjectManager (
                 return null
             }
         }
-        AppInfo.getFrontEndTool().setActiveProject(project)
         return project
     }
 }

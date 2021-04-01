@@ -28,9 +28,11 @@ import ghidra.util.task.TaskMonitor
 import pcodefiles.AppInfo
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 
-class WinOLSAnalyzerGUI(
+class WinOLSAnalyzer(
     private val consoleService: ConsoleService,
     private val monitor: TaskMonitor,
     private val reuseAnalysis: Boolean,
@@ -42,19 +44,19 @@ class WinOLSAnalyzerGUI(
     fun analyzeExampleFirmware(
         project: Project,
         winOLSScript: File,
-        exampleFile: List<File>,
+        exampleFile: File,
         outputDir: File?
     ): Program {
-        consoleService.println("Start analysis for " + winOLSScript.absolutePath)
+        println("Start analysis for " + winOLSScript.absolutePath)
         val exampleProgram: Program
         val rootFolder = project.projectData.rootFolder
-        if (reuseAnalysis && null != rootFolder.getFile(exampleFile[0].name)) {
-            exampleProgram = rootFolder.getFile(exampleFile[0].name).getDomainObject(
+        if (reuseAnalysis && null != rootFolder.getFile(exampleFile.name)) {
+            exampleProgram = rootFolder.getFile(exampleFile.name).getDomainObject(
                 this, true, false, monitor
             ) as Program
         } else {
             exampleProgram = AutoImporter.importByUsingSpecificLoaderClassAndLcs(
-                exampleFile[0],
+                exampleFile,
                 project.projectData.rootFolder,
                 BinaryLoader::class.java,
                 object : LinkedList<Pair<String?, String?>?>() {
@@ -111,7 +113,7 @@ class WinOLSAnalyzerGUI(
             if (program == null) {
                 Msg.error(this, "Program " + inputFile.name + " could not be imported")
             } else {
-                consoleService.println("Looking for maps in " + inputFile.name)
+                println("Looking for maps in " + inputFile.name)
                 program.isTemporary = true
                 runScriptInstance(project, FindMapsScript(project.getSaveableData("analysis_report")), program, arrayOf(outputDir.absolutePath))
             }
@@ -165,4 +167,22 @@ class WinOLSAnalyzerGUI(
         )
     }
 
+    fun renameFile(file: File, scriptcode: String) {
+        val dirPath = file.toPath().parent.toString()
+        var newName = Paths.get(dirPath, scriptcode)
+        if (file.path == newName.toString()) {
+            return
+        }
+        if (Files.exists(newName)) {
+            var i = 1
+            while (true) {
+                if (Files.notExists(Paths.get(dirPath, "$scriptcode($i)"))) {
+                    newName = Paths.get(dirPath, "$scriptcode($i)")
+                    break
+                }
+                i++
+            }
+        }
+        file.renameTo(File(newName.toString()))
+    }
 }

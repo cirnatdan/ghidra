@@ -8,6 +8,9 @@ import ghidra.program.model.listing.CodeUnitIterator
 import ghidra.program.model.listing.Instruction
 import ghidra.program.model.listing.InstructionIterator
 import ghidra.program.model.scalar.Scalar
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.experimental.and
 
 interface Utils: GhidraFlatProgramAPI {

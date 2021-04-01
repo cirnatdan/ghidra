@@ -18,8 +18,11 @@ package pcodefiles;
 import ghidra.GhidraApplicationLayout;
 import ghidra.GhidraLaunchable;
 import ghidra.GhidraThreadGroup;
+import pcodefiles.console.HeadlessErrorLogger;
 import ghidra.framework.Application;
+import ghidra.framework.HeadlessGhidraApplicationConfiguration;
 import ghidra.framework.remote.InetNameLookup;
+import ghidra.util.Msg;
 import ghidra.util.SystemUtilities;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,13 +59,24 @@ public class PcodeFilesRun implements GhidraLaunchable {
 
         Runnable mainTask = () -> {
             var injector = new Injector();
-            Application.initializeApplication(layout, injector.getApplicationConfiguration());
 
-            log = LogManager.getLogger(PcodeFilesRun.class);
-            log.info("User " + SystemUtilities.getUserName() + " started Ghidra.");
+            if (args.length > 0) {
+                var configuration = new HeadlessGhidraApplicationConfiguration();
+                configuration.setInitializeLogging(false);
+                Msg.setErrorLogger(new HeadlessErrorLogger(null));
+                Application.initializeApplication(layout, configuration);
 
-            var mainHelper = injector.getMainHelper();
-            mainHelper.run(args);
+                var cliHelper = injector.getCliHelper();
+                cliHelper.run(args);
+            } else {
+                Application.initializeApplication(layout, injector.getApplicationConfiguration());
+
+                log = LogManager.getLogger(PcodeFilesRun.class);
+                log.info("User " + SystemUtilities.getUserName() + " started Ghidra.");
+
+                var guiHelper = injector.getGuiHelper();
+                guiHelper.run(args);
+            }
         };
 
         // Automatically disable reverse name lookup if failure occurs

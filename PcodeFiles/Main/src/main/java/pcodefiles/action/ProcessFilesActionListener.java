@@ -7,8 +7,10 @@ import ghidra.framework.model.ProjectManager;
 import ghidra.framework.options.SaveState;
 import ghidra.program.model.lang.LanguageService;
 import ghidra.util.task.TaskBuilder;
+import pcodefiles.AppInfo;
 import pcodefiles.WinOLSProjectManager;
-import pcodefiles.analysis.WinOLSAnalyzerGUI;
+import pcodefiles.analysis.UtilsHelper;
+import pcodefiles.analysis.WinOLSAnalyzer;
 import pcodefiles.model.Group;
 import pcodefiles.ui.PatternsWindow;
 import pcodefiles.ui.WinOLSPanel;
@@ -52,9 +54,9 @@ public class ProcessFilesActionListener implements ActionListener {
         //@formatter:off
         TaskBuilder.withRunnable(monitor -> {
             monitor.setMaximum(1);
-            WinOLSAnalyzerGUI analyzerGUI;
+            WinOLSAnalyzer analyzerGUI;
             try {
-                analyzerGUI = new WinOLSAnalyzerGUI(
+                analyzerGUI = new WinOLSAnalyzer(
                         winOLSTool.getService(ConsoleService.class),
                         monitor,
                         reuseAnalysis,
@@ -75,12 +77,13 @@ public class ProcessFilesActionListener implements ActionListener {
 
             monitor.setMessage("Parse winolsscript file");
             var project = winOLSPM.openProject(winOLSScript);
+            AppInfo.getFrontEndTool().setActiveProject(project);
             assert project != null;
             project.setSaveableData("analysis_report", new SaveState());
             var report = project.getSaveableData("analysis_report");
 
             try {
-                analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile, outputDir);
+                analyzerGUI.analyzeExampleFirmware(project, winOLSScript, exampleFile.get(0), outputDir);
                 if (button.getName().equals("patterns")) {
                     var parseResult = project.getSaveableData("winOLSParseResult");
                     var patterns = new HashMap<String,List<String>>();
@@ -104,7 +107,7 @@ public class ProcessFilesActionListener implements ActionListener {
                     analyzerGUI.runAnalysis(project, file, outputDir);
                     var scriptcode = report.getString(file.getName() + "_scriptcode", "");
                     if (!"".equals(scriptcode)) {
-                        renameFile(file, scriptcode);
+                        analyzerGUI.renameFile(file, scriptcode);
                     }
                 }
 
@@ -180,25 +183,5 @@ public class ProcessFilesActionListener implements ActionListener {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private void renameFile(File file, String scriptcode) {
-        var dirPath = file.toPath().getParent().toString();
-        var newName = Paths.get(dirPath, scriptcode);
-        if (file.getPath().equals(newName.toString())) {
-            return;
-        }
-        if (Files.exists(newName)) {
-            var i = 1;
-            while(true) {
-                if (Files.notExists(Paths.get(dirPath, scriptcode + "(" + i + ")"))) {
-                    newName = Paths.get(dirPath, scriptcode + "(" + i + ")");
-                    break;
-                }
-                i++;
-            }
-        }
-        //noinspection ResultOfMethodCallIgnored
-        file.renameTo(new File(newName.toString()));
     }
 }

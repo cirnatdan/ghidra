@@ -89,7 +89,7 @@ def main():
         for global_command in parse_tree.children:
             walkTree(global_command)
 
-    project = state.getTool().getProject()
+    project = state.getProject()
     parsed_state = SaveState()
     parsed_state.putString("winOLS_groups", json.JSONEncoder().encode(this.groups_export))
     project.setSaveableData("winOLSParseResult", parsed_state)

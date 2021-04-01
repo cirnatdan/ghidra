@@ -36,7 +36,7 @@ public class AppInfo {
 	}
 
 	public static WinOLSTool getFrontEndTool() {
-		assertFrontEndRunning();
+		//assertFrontEndRunning();
 		return tool;
 	}
 

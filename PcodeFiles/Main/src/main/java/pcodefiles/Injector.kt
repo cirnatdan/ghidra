@@ -18,8 +18,12 @@ class Injector {
         createApplicationConfiguration()
     }
 
-    val mainHelper by lazy {
-        createMainHelper()
+    val guiHelper by lazy {
+        createGUIHelper()
+    }
+
+    val cliHelper by lazy {
+        createCLIHelper()
     }
 
     private val toolTipManager by lazy {
@@ -70,8 +74,15 @@ class Injector {
         SystemUtilities.runSwingNow { SplashScreen.updateSplashScreenStatus(message) }
     }
 
-    private fun createMainHelper(): MainHelper {
-        return MainHelper(toolTipManager, winOLSTool, frontEndPlugin)
+    private fun createGUIHelper(): GUIHelper {
+        return GUIHelper(toolTipManager, winOLSTool, frontEndPlugin)
+    }
+
+    private fun createCLIHelper(): CLIHelper {
+        class HeadlessPM : DefaultProjectManager() {
+            // this exists just to allow access to the constructor
+        }
+        return CLIHelper(languageService, HeadlessPM())
     }
 
     private fun createToolTipManager(): ToolTipManager {

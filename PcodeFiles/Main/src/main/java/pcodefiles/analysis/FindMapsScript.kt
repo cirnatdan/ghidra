@@ -36,6 +36,7 @@ class FindMapsScript(
         val notFoundGroups = arrayListOf<String>()
 
         File(scriptArgs[0], "code.patterns").forEachLine {
+            System.out.println(it)
             val line = it.trim().split("::")
             val group = Group(line[0])
             group.name = line[1]
@@ -119,7 +120,7 @@ class FindMapsScript(
             println("Groups for size reuse not found: ${sizeReuseRule["from"]} ${sizeReuseRule["to"]}")
             sizeReuseRule["folder"] = ""
         }
-
+        System.out.println("DEBUG")
         for (g in foundGroups) {
             val group = g.value
             if (group.folderName == sizeReuseRule["folder"]) {
@@ -161,7 +162,10 @@ class FindMapsScript(
     }
 
     private fun readSizeReuse(file: File): Map<String,String> {
-        var sizeReuse = mapOf<String,String>()
+        var sizeReuse = mapOf<String,String>("from" to "", "to" to "")
+        if (!file.exists()) {
+            return sizeReuse
+        }
         file.forEachLine {
             val line = it.trim().split("::")
             sizeReuse = mapOf(

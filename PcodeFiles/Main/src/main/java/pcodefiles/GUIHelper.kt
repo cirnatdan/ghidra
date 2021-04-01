@@ -15,7 +15,7 @@ import ghidra.util.task.TaskLauncher
 import java.io.File
 import javax.swing.ToolTipManager
 
-class MainHelper(
+class GUIHelper(
     private val toolTipManager: ToolTipManager,
     private val tool: WinOLSTool,
     private val frontEndPlugin: FrontEndPlugin
