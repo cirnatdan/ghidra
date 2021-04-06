@@ -47,8 +47,8 @@ public class ProcessFilesActionListener implements ActionListener {
 
         File winOLSScript = parent.getSelectedFiles(WinOLSPanel.WINOLSSCRIPT).get(0);
         List<File> exampleFile = parent.getSelectedFiles(WinOLSPanel.EXAMPLEFILE);
-        List<File> inputFiles = button.getName().equals("patterns") ? null : parent.getSelectedFiles(WinOLSPanel.INPUTFILES);
-        File outputDir = button.getName().equals("patterns") ? null : parent.getSelectedFiles(WinOLSPanel.OUTPUTDIR).get(0);
+        List<File> inputFiles = "patterns".equals(button.getName()) ? null : parent.getSelectedFiles(WinOLSPanel.INPUTFILES);
+        File outputDir = "patterns".equals(button.getName()) ? null : parent.getSelectedFiles(WinOLSPanel.OUTPUTDIR).get(0);
         boolean reuseAnalysis = parent.reuseAnalysis();
 
         //@formatter:off

@@ -53,6 +53,7 @@ class CLIHelper(
             println(ex.message)
             ex.printStackTrace()
         }
+        System.exit(0)
     }
 
     private fun parseOptions(options: HeadlessOptions, args: Array<String>) {

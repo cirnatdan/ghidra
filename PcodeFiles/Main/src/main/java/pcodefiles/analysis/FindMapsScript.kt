@@ -120,7 +120,7 @@ class FindMapsScript(
             println("Groups for size reuse not found: ${sizeReuseRule["from"]} ${sizeReuseRule["to"]}")
             sizeReuseRule["folder"] = ""
         }
-        System.out.println("DEBUG")
+
         for (g in foundGroups) {
             val group = g.value
             if (group.folderName == sizeReuseRule["folder"]) {

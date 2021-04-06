@@ -145,6 +145,7 @@ public class WinOLSPanel extends JPanel {
         ));
 
         JButton processButton = ButtonPanelFactory.createButton("Process files");
+        processButton.setName("process");
 
         processButton.addActionListener(
                 new ReuseMapSizeActionListener(
