@@ -29,7 +29,7 @@ task runApp(type: JavaExec) {
     jvmArgs('-Djava.system.class.loader=ghidra.GhidraClassLoader', '-Xshare:off')
     args ('pcodefiles.PcodeFilesRun')
     classpath += project.configurations.runtimeClasspath
-    classpath += files('build/libs/Main.jar', 'kotlin-stdlib-common-1.4.30.jar')
+    classpath += files('build/libs/Main.jar')
     main = "ghidra.GhidraLauncher"
 }
 
